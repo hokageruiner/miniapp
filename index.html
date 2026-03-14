@@ -15,10 +15,7 @@
         <h1>Рабочий кабинет</h1>
         <p>Быстрый запуск судов и выездов прямо внутри Telegram.</p>
       </div>
-      <div class="hero-side">
-        <div class="pill">Mini App</div>
-        <div id="appMode" class="mode-badge">Проверка окружения…</div>
-      </div>
+      <div class="pill">Mini App</div>
     </header>
 
     <section class="grid">
@@ -35,26 +32,24 @@
       <button class="feature-card" data-action="today">
         <span class="icon">📆</span>
         <span class="title">На сегодня</span>
-        <span class="desc">Отправить запрос на список дел</span>
+        <span class="desc">Показать список задач на сегодня</span>
       </button>
       <button class="feature-card" data-action="week">
         <span class="icon">🗓️</span>
         <span class="title">На неделю</span>
-        <span class="desc">Отправить запрос на недельную сводку</span>
+        <span class="desc">Открыть недельную сводку</span>
       </button>
     </section>
 
     <section class="form-card">
       <label for="payload">Черновик сообщения</label>
       <textarea id="payload" rows="7" placeholder="Сюда можно собрать текст, который Mini App отправит боту"></textarea>
-      <div id="actionsBar" class="actions">
+      <div id="browserActions" class="actions">
         <button id="copyBtn" class="secondary" type="button">Скопировать</button>
         <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
       </div>
-      <p class="hint">
-        В Telegram используются нижние кнопки MainButton и SecondaryButton.
-        В обычном браузере отправка в бота не работает, доступно только копирование.
-      </p>
+      <p id="browserHint" class="hint">В Telegram используются нижние встроенные кнопки. В обычном браузере работают кнопки выше.</p>
+      <p id="statusText" class="status" aria-live="polite"></p>
     </section>
   </div>
   <script src="app.js"></script>
