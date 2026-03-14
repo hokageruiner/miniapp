@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>BNEO Cabinet</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="hero-card">
+      <div>
+        <div class="eyebrow">BNEO</div>
+        <h1>Рабочий кабинет</h1>
+        <p>Быстрый запуск судов и выездов прямо внутри Telegram.</p>
+      </div>
+      <div class="pill">Mini App</div>
+    </header>
+
+    <section class="grid">
+      <button class="feature-card" data-action="court-template">
+        <span class="icon">⚖️</span>
+        <span class="title">Шаблон суда</span>
+        <span class="desc">Подставить готовую форму для суда</span>
+      </button>
+      <button class="feature-card" data-action="outing-template">
+        <span class="icon">🚗</span>
+        <span class="title">Шаблон выезда</span>
+        <span class="desc">Быстро вставить форму выезда</span>
+      </button>
+      <button class="feature-card" data-action="today">
+        <span class="icon">📆</span>
+        <span class="title">На сегодня</span>
+        <span class="desc">Показать список задач на сегодня</span>
+      </button>
+      <button class="feature-card" data-action="week">
+        <span class="icon">🗓️</span>
+        <span class="title">На неделю</span>
+        <span class="desc">Открыть недельную сводку</span>
+      </button>
+    </section>
+
+    <section class="form-card">
+      <label for="payload">Черновик сообщения</label>
+      <textarea id="payload" rows="7" placeholder="Сюда можно собрать текст, который Mini App отправит боту"></textarea>
+      <div class="actions">
+        <button id="copyBtn" class="secondary">Скопировать</button>
+        <button id="sendBtn" class="primary">Отправить в бота</button>
+      </div>
+      <p class="hint">Кнопка «Отправить в бота» использует Telegram.WebApp.sendData().</p>
+    </section>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
