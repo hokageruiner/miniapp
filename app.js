@@ -8,12 +8,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const copyBtn = document.getElementById("copyBtn");
   const sendBtn = document.getElementById("sendBtn");
 
-  const actionButtons = Array.from(document.querySelectorAll("[data-action]"));
+  const actionMap = {
+    "court-template": () => setDraft(
+      "14.03.2026 14:00 суд по делу №A21-025/2026
+" +
+      "суд: Московский районный суд
+" +
+      "адрес: г. Калининград, ул. Примерная, д. 1
+" +
+      "эксперт: Иванов"
+    ),
+    "outing-template": () => setDraft(
+      "0734К-2026 14:00 14.03.2026 город Калининград, улица Красная, дом 7, квартира 10 " +
+      "Залитие потолка эксперт: Иванов кто едет: Петров кто вёз: Lada " +
+      "стоимость экспертизы: 15000 стоимость выезда: 3000"
+    ),
+    "today": () => quickCommand("/today"),
+    "week": () => quickCommand("/week"),
+    "upcoming": () => quickCommand("/upcoming"),
+    "courts": () => quickCommand("/courts"),
+    "trips": () => quickCommand("/trips"),
+    "base": () => quickCommand("/base"),
+  };
 
   function showStatus(text, isError = false) {
     if (!statusEl) return;
     statusEl.textContent = text;
-    statusEl.dataset.state = isError ? "error" : "ok";
+    statusEl.style.color = isError ? "#ff6b6b" : "";
   }
 
   function getDraft() {
@@ -24,167 +45,82 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!draftEl) return;
     draftEl.value = text;
     updateButtons();
-  }
-
-  function applyTelegramTheme() {
-    if (!isTelegram) return;
-    const root = document.documentElement;
-    const params = tg.themeParams || {};
-    const map = {
-      "--tg-bg": params.bg_color,
-      "--tg-text": params.text_color,
-      "--tg-hint": params.hint_color,
-      "--tg-link": params.link_color,
-      "--tg-button": params.button_color,
-      "--tg-button-text": params.button_text_color,
-      "--tg-secondary-bg": params.secondary_bg_color,
-    };
-    Object.entries(map).forEach(([key, value]) => {
-      if (value) root.style.setProperty(key, value);
-    });
-  }
-
-  function configureTelegramButtons() {
-    if (!isTelegram) return;
-
-    if (tg.MainButton) {
-      tg.MainButton.setText("Отправить в бота");
-      tg.MainButton.offClick(sendCurrentDraft);
-      tg.MainButton.onClick(sendCurrentDraft);
-    }
-
-    if (tg.SecondaryButton) {
-      tg.SecondaryButton.setText("Скопировать");
-      if (typeof tg.SecondaryButton.setParams === "function") {
-        tg.SecondaryButton.setParams({ position: "left" });
-      }
-      tg.SecondaryButton.offClick(copyDraft);
-      tg.SecondaryButton.onClick(copyDraft);
-    }
+    showStatus("Черновик обновлён.");
   }
 
   function updateButtons() {
     const hasText = !!getDraft();
-
     if (sendBtn) sendBtn.disabled = !hasText;
     if (copyBtn) copyBtn.disabled = !hasText;
 
-    if (isTelegram && tg.MainButton) {
-      if (hasText) tg.MainButton.show();
-      else tg.MainButton.hide();
-    }
-
-    if (isTelegram && tg.SecondaryButton) {
-      if (hasText) tg.SecondaryButton.show();
-      else tg.SecondaryButton.hide();
+    if (isTelegram && tg.MainButton && tg.SecondaryButton) {
+      tg.MainButton.setText("Отправить в бота");
+      hasText ? tg.MainButton.show() : tg.MainButton.hide();
+      tg.SecondaryButton.setText("Скопировать");
+      hasText ? tg.SecondaryButton.show() : tg.SecondaryButton.hide();
     }
   }
 
   async function copyDraft() {
     const text = getDraft();
-    if (!text) {
-      showStatus("Нечего копировать.", true);
-      return;
-    }
-
+    if (!text) return showStatus("Нечего копировать.", true);
     try {
       await navigator.clipboard.writeText(text);
       showStatus("Скопировано.");
-    } catch (error) {
-      console.error(error);
+    } catch {
       showStatus("Не удалось скопировать.", true);
     }
   }
 
-  function sendPayload(text) {
-    const payload = (text || "").trim();
-
-    if (!payload) {
-      showStatus("Поле пустое.", true);
-      return;
-    }
-
+  function sendToBot(payload = null) {
+    const text = (payload || getDraft()).trim();
+    if (!text) return showStatus("Поле пустое.", true);
     if (!isTelegram) {
-      setDraft(payload);
-      showStatus("В браузере команда только подставлена. Отправка работает внутри Telegram.", true);
-      return;
+      setDraft(text);
+      return showStatus("В обычном браузере отправка в бота недоступна.", true);
     }
-
     try {
-      tg.sendData(payload);
-      showStatus(`Отправлено в бота: ${payload}`);
+      tg.sendData(text);
+      showStatus(`Отправлено: ${text}`);
     } catch (error) {
       console.error(error);
       showStatus("Ошибка при отправке в бота.", true);
     }
   }
 
-  function sendCurrentDraft() {
-    sendPayload(getDraft());
-  }
-
   function quickCommand(command) {
-    if (isTelegram) {
-      sendPayload(command);
-    } else {
-      setDraft(command);
-      showStatus(`Команда ${command} подставлена в поле.`);
-    }
+    if (isTelegram) return sendToBot(command);
+    setDraft(command);
+    showStatus(`Команда ${command} подставлена в поле.`);
   }
 
-  function fillCourtTemplate() {
-    setDraft(
-      "14.03.2026 14:00 суд по делу №A21-025/2026\n" +
-      "суд: Московский районный суд\n" +
-      "адрес: г. Калининград, ул. Примерная, д. 1\n" +
-      "эксперт: Иванов"
-    );
-    showStatus("Шаблон суда подставлен.");
-  }
-
-  function fillTripTemplate() {
-    setDraft(
-      "0734К-2026 14:00 14.03.2026 город Калининград, улица Красная, дом 7, квартира 10 " +
-      "Залитие потолка эксперт: Иванов кто едет: Петров кто вёз: Lada " +
-      "стоимость экспертизы: 15000 стоимость выезда: 3000"
-    );
-    showStatus("Шаблон выезда подставлен.");
-  }
-
-  const actionMap = {
-    today: () => quickCommand("/today"),
-    week: () => quickCommand("/week"),
-    upcoming: () => quickCommand("/upcoming"),
-    courts: () => quickCommand("/courts"),
-    outings: () => quickCommand("/trips"),
-    base: () => quickCommand("/base"),
-    "court-template": fillCourtTemplate,
-    "outing-template": fillTripTemplate,
-  };
-
-  actionButtons.forEach((button) => {
+  document.querySelectorAll("[data-action]").forEach((button) => {
     button.addEventListener("click", () => {
       const action = button.dataset.action;
       const handler = actionMap[action];
       if (handler) handler();
+      else showStatus(`Неизвестное действие: ${action}`, true);
     });
   });
 
   if (copyBtn) copyBtn.addEventListener("click", copyDraft);
-  if (sendBtn) sendBtn.addEventListener("click", sendCurrentDraft);
+  if (sendBtn) sendBtn.addEventListener("click", () => sendToBot());
   if (draftEl) draftEl.addEventListener("input", updateButtons);
 
   if (isTelegram) {
     tg.ready();
     tg.expand();
-    applyTelegramTheme();
-    configureTelegramButtons();
-
     if (htmlActions) htmlActions.style.display = "none";
-    showStatus("Mini App подключен. Кнопки работают напрямую через Telegram.");
+    if (tg.MainButton) {
+      tg.MainButton.onClick(() => sendToBot());
+    }
+    if (tg.SecondaryButton) {
+      tg.SecondaryButton.onClick(copyDraft);
+    }
+    showStatus("Mini App подключен. Быстрые кнопки активны.");
   } else {
     if (htmlActions) htmlActions.style.display = "flex";
-    showStatus("Открыт обычный браузер. Кнопки подставляют команды и шаблоны в поле.");
+    showStatus("Открыт обычный браузер. Можно собрать текст и скопировать его.");
   }
 
   updateButtons();
