@@ -2,184 +2,195 @@ document.addEventListener('DOMContentLoaded', () => {
   const tg = window.Telegram?.WebApp || null;
   const isTelegram = Boolean(tg);
 
-  const form = document.getElementById('eventForm');
-  const typeEl = document.getElementById('eventType');
-  const titleEl = document.getElementById('title');
-  const datetimeEl = document.getElementById('eventDateTime');
-  const numberEl = document.getElementById('number');
-  const courtEl = document.getElementById('courtName');
-  const expertEl = document.getElementById('expertName');
-  const addressEl = document.getElementById('address');
-  const whoEl = document.getElementById('whoGoes');
-  const driverEl = document.getElementById('driver');
-  const expPriceEl = document.getElementById('expertisePrice');
-  const tripPriceEl = document.getElementById('tripPrice');
-  const previewEl = document.getElementById('preview');
+  const payloadEl = document.getElementById('payload');
   const statusEl = document.getElementById('status');
-  const htmlActions = document.getElementById('htmlActions');
+  const htmlActionsEl = document.getElementById('htmlActions');
   const copyBtn = document.getElementById('copyBtn');
   const sendBtn = document.getElementById('sendBtn');
-  const fields = Array.from(document.querySelectorAll('[data-field]'));
-  const cards = Array.from(document.querySelectorAll('[data-action]'));
+  const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
+  const panels = Array.from(document.querySelectorAll('.tab-panel'));
+  const actionButtons = Array.from(document.querySelectorAll('[data-action]'));
 
-  const companyLogo = document.getElementById('companyLogo');
-  if (companyLogo) {
-    companyLogo.addEventListener('error', () => {
-      companyLogo.style.display = 'none';
+  const courtFields = {
+    date: document.getElementById('courtDate'),
+    time: document.getElementById('courtTime'),
+    caseNumber: document.getElementById('courtCase'),
+    expertise: document.getElementById('courtExpertise'),
+    courtName: document.getElementById('courtName'),
+    address: document.getElementById('courtAddress'),
+    person: document.getElementById('courtPerson'),
+    title: document.getElementById('courtTitle'),
+  };
+
+  const outingFields = {
+    date: document.getElementById('outingDate'),
+    time: document.getElementById('outingTime'),
+    expertise: document.getElementById('outingExpertise'),
+    expert: document.getElementById('outingExpert'),
+    address: document.getElementById('outingAddress'),
+    title: document.getElementById('outingTitle'),
+    whoGoes: document.getElementById('outingWhoGoes'),
+    whoDrove: document.getElementById('outingWhoDrove'),
+    expertisePrice: document.getElementById('outingExpertisePrice'),
+    tripPrice: document.getElementById('outingTripPrice'),
+  };
+
+  function setStatus(text, type = 'info') {
+    statusEl.textContent = text || '';
+    statusEl.className = `status is-${type}`;
+  }
+
+  function getDraft() {
+    return (payloadEl.value || '').trim();
+  }
+
+  function setDraft(text) {
+    payloadEl.value = text || '';
+    updateButtons();
+  }
+
+  function updateButtons() {
+    const hasDraft = Boolean(getDraft());
+    if (copyBtn) copyBtn.disabled = !hasDraft;
+    if (sendBtn) sendBtn.disabled = !hasDraft;
+
+    if (isTelegram && tg.MainButton) {
+      tg.MainButton.setText('Отправить в бота');
+      hasDraft ? tg.MainButton.show() : tg.MainButton.hide();
+    }
+    if (isTelegram && tg.SecondaryButton) {
+      tg.SecondaryButton.setText('Скопировать');
+      hasDraft ? tg.SecondaryButton.show() : tg.SecondaryButton.hide();
+    }
+  }
+
+  function switchTab(tabName) {
+    tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.tab === tabName));
+    panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.panel === tabName));
+  }
+
+  function pad(value) {
+    return String(value).padStart(2, '0');
+  }
+
+  function formatDateForText(value) {
+    if (!value) return '';
+    const [year, month, day] = value.split('-');
+    if (!year || !month || !day) return value;
+    return `${day}.${month}.${year}`;
+  }
+
+  function ensureDefaults() {
+    const now = new Date();
+    const dateValue = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const timeValue = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    [courtFields.date, outingFields.date].forEach((el) => {
+      if (el && !el.value) el.value = dateValue;
+    });
+    [courtFields.time, outingFields.time].forEach((el) => {
+      if (el && !el.value) el.value = timeValue;
     });
   }
 
-  function setStatus(text, kind = 'info') {
-    if (!statusEl) return;
-    statusEl.textContent = text;
-    statusEl.className = `status is-${kind}`;
-  }
-
-  function formatDateForInput(date) {
-    const pad = (value) => String(value).padStart(2, '0');
-    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
-  }
-
-  function nowPlus(hours) {
-    const date = new Date();
-    date.setHours(date.getHours() + hours, 0, 0, 0);
-    return formatDateForInput(date);
-  }
-
-  function currentType() {
-    return (typeEl?.value || 'court').trim();
-  }
-
-  function setType(nextType) {
-    if (!typeEl) return;
-    typeEl.value = nextType;
-    document.body.dataset.type = nextType;
-    renderPreview();
-  }
-
-  function courtTemplate() {
-    setType('court');
-    titleEl.value = 'Судебное заседание';
-    datetimeEl.value = nowPlus(24);
-    numberEl.value = 'A21-025/2026';
-    courtEl.value = 'Московский районный суд';
-    expertEl.value = 'Иванов';
-    addressEl.value = 'г. Калининград, ул. Примерная, д. 1';
-    whoEl.value = '';
-    driverEl.value = '';
-    expPriceEl.value = '';
-    tripPriceEl.value = '';
-    renderPreview();
+  function fillCourtTemplate() {
+    ensureDefaults();
+    courtFields.caseNumber.value = 'A21-025/2026';
+    courtFields.expertise.value = '0734К-2026';
+    courtFields.courtName.value = 'Московский районный суд';
+    courtFields.address.value = 'г. Калининград, ул. Примерная, д. 1';
+    courtFields.person.value = 'Иванов Иван';
+    courtFields.title.value = 'суд по делу';
+    switchTab('court');
+    applyCourt();
     setStatus('Шаблон суда подставлен.', 'success');
   }
 
-  function outingTemplate() {
-    setType('outing');
-    titleEl.value = 'Выезд на объект';
-    datetimeEl.value = nowPlus(6);
-    numberEl.value = '0734К-2026';
-    courtEl.value = '';
-    expertEl.value = 'Иванов';
-    addressEl.value = 'г. Калининград, ул. Красная, д. 7, кв. 10';
-    whoEl.value = 'Петров';
-    driverEl.value = 'Lada';
-    expPriceEl.value = '15000';
-    tripPriceEl.value = '3000';
-    renderPreview();
+  function fillOutingTemplate() {
+    ensureDefaults();
+    outingFields.expertise.value = '0734К-2026';
+    outingFields.expert.value = 'Иванов';
+    outingFields.address.value = 'г. Калининград, ул. Красная, д. 7, кв. 10';
+    outingFields.title.value = 'залитие потолка';
+    outingFields.whoGoes.value = 'Петров';
+    outingFields.whoDrove.value = 'Lada';
+    outingFields.expertisePrice.value = '15000';
+    outingFields.tripPrice.value = '3000';
+    switchTab('outing');
+    applyOuting();
     setStatus('Шаблон выезда подставлен.', 'success');
   }
 
-  function payloadFromForm() {
-    const type = currentType();
-    const title = titleEl.value.trim();
-    const dt = datetimeEl.value.trim();
-    const num = numberEl.value.trim();
-    const court = courtEl.value.trim();
-    const expert = expertEl.value.trim();
-    const address = addressEl.value.trim();
-    const who = whoEl.value.trim();
-    const driver = driverEl.value.trim();
-    const expertisePrice = expPriceEl.value.trim();
-    const tripPrice = tripPriceEl.value.trim();
-
-    if (!title || !dt || !num || !address) {
-      return '';
+  function applyCourt() {
+    ensureDefaults();
+    const parts = [];
+    const dateText = formatDateForText(courtFields.date.value);
+    const timeText = courtFields.time.value || '00:00';
+    parts.push(`${dateText} ${timeText}`);
+    if (courtFields.title.value.trim()) {
+      parts.push(courtFields.title.value.trim());
+    } else {
+      parts.push('суд по делу');
     }
-
-    const [datePart, timePart] = dt.split('T');
-    const [yyyy, mm, dd] = datePart.split('-');
-    const prettyDate = dd && mm && yyyy ? `${dd}.${mm}.${yyyy}` : datePart;
-
-    if (type === 'court') {
-      const lines = [
-        `${prettyDate} ${timePart || '09:00'} суд по делу №${num}`,
-        court ? `суд: ${court}` : '',
-        `адрес: ${address}`,
-        expert ? `эксперт: ${expert}` : '',
-      ].filter(Boolean);
-      return lines.join('\n');
+    if (courtFields.caseNumber.value.trim()) {
+      parts.push(`№${courtFields.caseNumber.value.trim()}`);
     }
-
-    const chunks = [
-      `${num} ${timePart || '09:00'} ${prettyDate}`,
-      address,
-      title,
-      expert ? `эксперт: ${expert}` : '',
-      who ? `кто едет: ${who}` : '',
-      driver ? `кто вёз: ${driver}` : '',
-      expertisePrice ? `стоимость экспертизы: ${expertisePrice}` : '',
-      tripPrice ? `стоимость выезда: ${tripPrice}` : '',
-    ].filter(Boolean);
-    return chunks.join(' ');
+    if (courtFields.expertise.value.trim()) {
+      parts.push(`экспертиза ${courtFields.expertise.value.trim()}`);
+    }
+    if (courtFields.courtName.value.trim()) {
+      parts.push(`суд: ${courtFields.courtName.value.trim()}`);
+    }
+    if (courtFields.address.value.trim()) {
+      parts.push(`адрес: ${courtFields.address.value.trim()}`);
+    }
+    if (courtFields.person.value.trim()) {
+      parts.push(`явка ${courtFields.person.value.trim()}`);
+    }
+    setDraft(parts.join('\n'));
+    setStatus('Черновик суда обновлён.', 'success');
   }
 
-  function previewLines() {
-    const lines = [];
-    const typeLabel = currentType() === 'court' ? '⚖️ Суд' : '🚗 Выезд';
-    lines.push(typeLabel);
-    if (titleEl.value.trim()) lines.push(`• Событие: ${titleEl.value.trim()}`);
-    if (datetimeEl.value.trim()) lines.push(`• Дата и время: ${datetimeEl.value.trim().replace('T', ' ')}`);
-    if (numberEl.value.trim()) lines.push(`• Номер: ${numberEl.value.trim()}`);
-    if (courtEl.value.trim()) lines.push(`• Суд: ${courtEl.value.trim()}`);
-    if (addressEl.value.trim()) lines.push(`• Адрес: ${addressEl.value.trim()}`);
-    if (expertEl.value.trim()) lines.push(`• Эксперт: ${expertEl.value.trim()}`);
-    if (whoEl.value.trim()) lines.push(`• Кто едет: ${whoEl.value.trim()}`);
-    if (driverEl.value.trim()) lines.push(`• Кто вёз: ${driverEl.value.trim()}`);
-    if (expPriceEl.value.trim()) lines.push(`• Стоимость экспертизы: ${expPriceEl.value.trim()}`);
-    if (tripPriceEl.value.trim()) lines.push(`• Стоимость выезда: ${tripPriceEl.value.trim()}`);
-    return lines;
+  function applyOuting() {
+    ensureDefaults();
+    const dateText = formatDateForText(outingFields.date.value);
+    const timeText = outingFields.time.value || '00:00';
+    const parts = [];
+    parts.push(outingFields.expertise.value.trim() || '0734К-2026');
+    parts.push(timeText);
+    parts.push(dateText);
+    if (outingFields.address.value.trim()) parts.push(outingFields.address.value.trim());
+    if (outingFields.title.value.trim()) parts.push(outingFields.title.value.trim());
+    if (outingFields.expert.value.trim()) parts.push(`эксперт: ${outingFields.expert.value.trim()}`);
+    if (outingFields.whoGoes.value.trim()) parts.push(`кто едет: ${outingFields.whoGoes.value.trim()}`);
+    if (outingFields.whoDrove.value.trim()) parts.push(`кто вёз: ${outingFields.whoDrove.value.trim()}`);
+    if (outingFields.expertisePrice.value.trim()) parts.push(`стоимость экспертизы: ${outingFields.expertisePrice.value.trim()}`);
+    if (outingFields.tripPrice.value.trim()) parts.push(`стоимость выезда: ${outingFields.tripPrice.value.trim()}`);
+    setDraft(parts.join(' '));
+    setStatus('Черновик выезда обновлён.', 'success');
   }
 
-  function renderPreview() {
-    const lines = previewLines();
-    previewEl.textContent = lines.join('\n') || 'Заполните поля — здесь появится аккуратный предпросмотр.';
-    const hasPayload = Boolean(payloadFromForm());
-    if (sendBtn) sendBtn.disabled = !hasPayload;
-    if (copyBtn) copyBtn.disabled = !hasPayload;
-  }
-
-  async function copyPayload() {
-    const payload = payloadFromForm();
-    if (!payload) {
-      setStatus('Заполните обязательные поля перед копированием.', 'error');
+  async function copyDraft() {
+    const draft = getDraft();
+    if (!draft) {
+      setStatus('Сначала соберите черновик.', 'error');
       return;
     }
     try {
-      await navigator.clipboard.writeText(payload);
-      setStatus('Текст скопирован.', 'success');
-    } catch {
+      await navigator.clipboard.writeText(draft);
+      setStatus('Черновик скопирован.', 'success');
+    } catch (error) {
       setStatus('Не удалось скопировать текст.', 'error');
     }
   }
 
-  function sendToBot(customPayload = null) {
-    const payload = (customPayload || payloadFromForm()).trim();
+  function sendToBot(raw = null) {
+    const payload = (raw || getDraft()).trim();
     if (!payload) {
-      setStatus('Не хватает обязательных полей.', 'error');
+      setStatus('Сначала соберите черновик.', 'error');
       return;
     }
     if (!isTelegram) {
-      setStatus('Отправка работает внутри Telegram Mini App. В браузере можно только копировать.', 'error');
+      setStatus('Отправка работает внутри Telegram Mini App.', 'error');
       return;
     }
     try {
@@ -187,65 +198,71 @@ document.addEventListener('DOMContentLoaded', () => {
       setStatus('Форма отправлена в бота.', 'success');
     } catch (error) {
       console.error(error);
-      setStatus('Ошибка при отправке в бота.', 'error');
+      setStatus('Не удалось отправить данные в бота.', 'error');
     }
   }
 
-  function quickCommand(command) {
-    if (isTelegram) {
-      sendToBot(command);
+  function sendQuickCommand(command) {
+    if (!isTelegram) {
+      setDraft(command);
+      setStatus(`Команда ${command} подготовлена.`, 'success');
       return;
     }
-    setStatus(`Команда ${command} доступна внутри Telegram.`, 'info');
+    sendToBot(command);
   }
 
-  function handleAction(action) {
-    switch (action) {
-      case 'court-template':
-        courtTemplate();
-        break;
-      case 'outing-template':
-        outingTemplate();
-        break;
-      case 'today':
-        quickCommand('/today');
-        break;
-      case 'week':
-        quickCommand('/week');
-        break;
-      default:
-        setStatus('Неизвестное действие.', 'error');
-    }
-  }
+  tabButtons.forEach((btn) => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
 
-  cards.forEach((card) => {
-    card.addEventListener('click', () => handleAction(card.dataset.action));
+  actionButtons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const action = btn.dataset.action;
+      switch (action) {
+        case 'today':
+          sendQuickCommand('/today');
+          break;
+        case 'week':
+          sendQuickCommand('/week');
+          break;
+        case 'court-template':
+          fillCourtTemplate();
+          break;
+        case 'outing-template':
+          fillOutingTemplate();
+          break;
+        case 'apply-court':
+          applyCourt();
+          break;
+        case 'apply-outing':
+          applyOuting();
+          break;
+        default:
+          break;
+      }
+    });
   });
 
-  fields.forEach((field) => {
-    field.addEventListener('input', renderPreview);
-    field.addEventListener('change', renderPreview);
-  });
+  copyBtn.addEventListener('click', copyDraft);
+  sendBtn.addEventListener('click', () => sendToBot());
 
-  typeEl?.addEventListener('change', () => setType(typeEl.value));
-  form?.addEventListener('submit', (event) => {
-    event.preventDefault();
-    sendToBot();
-  });
-  copyBtn?.addEventListener('click', copyPayload);
-  sendBtn?.addEventListener('click', () => sendToBot());
+  ensureDefaults();
+  switchTab('court');
+  updateButtons();
 
   if (isTelegram) {
     document.body.classList.add('is-telegram');
     tg.ready();
     tg.expand();
-    if (htmlActions) htmlActions.style.display = 'none';
-    setStatus('Mini App подключён. Быстрые кнопки отправляют команды в бота.', 'success');
+    if (tg.MainButton) {
+      tg.MainButton.offClick(sendToBot);
+      tg.MainButton.onClick(() => sendToBot());
+    }
+    if (tg.SecondaryButton) {
+      tg.SecondaryButton.offClick(copyDraft);
+      tg.SecondaryButton.onClick(copyDraft);
+    }
+    if (htmlActionsEl) htmlActionsEl.style.display = 'none';
+    setStatus('Mini App подключён. Заполните форму и нажмите «Применить».', 'success');
   } else {
-    if (htmlActions) htmlActions.style.display = 'flex';
-    setStatus('Открыт обычный браузер. Доступны шаблоны, предпросмотр и копирование.', 'info');
+    setStatus('Открыт режим браузера. Сборка черновика и копирование доступны.', 'info');
   }
-
-  setType(currentType());
-  courtTemplate();
 });

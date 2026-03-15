@@ -3,107 +3,101 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>BNEO Cabinet</title>
+  <title>BNEO Mini App</title>
   <link rel="stylesheet" href="styles.css" />
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-<body data-type="court">
+<body>
   <div class="app-shell">
     <header class="hero-card">
-      <div class="hero-main">
-        <img id="companyLogo" class="company-logo" src="assets/logo.png" alt="Лого BNEO" />
+      <div class="brand-block">
+        <img class="brand-logo" src="assets/logo.png" alt="BNEO" />
         <div>
           <div class="eyebrow">BNEO</div>
           <h1>Рабочий кабинет</h1>
-          <p>Соберите суд или выезд по отдельным полям, проверьте предпросмотр и отправьте форму прямо в бота.</p>
+          <p>Суды, выезды и быстрые команды в одном окне.</p>
         </div>
       </div>
       <div class="pill">Mini App</div>
     </header>
 
-    <section class="grid">
-      <button class="feature-card" type="button" data-action="court-template">
-        <span class="icon">⚖️</span>
-        <span class="title">Шаблон суда</span>
-        <span class="desc">Подставить форму суда</span>
-      </button>
-      <button class="feature-card" type="button" data-action="outing-template">
-        <span class="icon">🚗</span>
-        <span class="title">Шаблон выезда</span>
-        <span class="desc">Подставить форму выезда</span>
-      </button>
-      <button class="feature-card" type="button" data-action="today">
+    <section class="quick-grid">
+      <button class="quick-card" type="button" data-action="today">
         <span class="icon">📆</span>
         <span class="title">На сегодня</span>
-        <span class="desc">Сразу отправить /today</span>
+        <span class="desc">Отправить в бота /today</span>
       </button>
-      <button class="feature-card" type="button" data-action="week">
+      <button class="quick-card" type="button" data-action="week">
         <span class="icon">🗓️</span>
         <span class="title">На неделю</span>
-        <span class="desc">Сразу отправить /week</span>
+        <span class="desc">Отправить в бота /week</span>
+      </button>
+      <button class="quick-card" type="button" data-action="court-template">
+        <span class="icon">⚖️</span>
+        <span class="title">Шаблон суда</span>
+        <span class="desc">Заполнить поля для суда</span>
+      </button>
+      <button class="quick-card" type="button" data-action="outing-template">
+        <span class="icon">🚗</span>
+        <span class="title">Шаблон выезда</span>
+        <span class="desc">Заполнить поля для выезда</span>
       </button>
     </section>
 
-    <section class="form-card">
-      <form id="eventForm" novalidate>
+    <section class="panel-card">
+      <div class="tabs">
+        <button class="tab-btn is-active" type="button" data-tab="court">Суд</button>
+        <button class="tab-btn" type="button" data-tab="outing">Выезд</button>
+      </div>
+
+      <div class="tab-panel is-active" data-panel="court">
         <div class="field-grid">
-          <label>
-            Тип события
-            <select id="eventType" data-field>
-              <option value="court">Суд</option>
-              <option value="outing">Выезд</option>
-            </select>
-          </label>
-          <label>
-            Название
-            <input id="title" data-field type="text" placeholder="Судебное заседание / Выезд на объект" />
-          </label>
-          <label>
-            Дата и время
-            <input id="eventDateTime" data-field type="datetime-local" />
-          </label>
-          <label>
-            Номер дела / экспертизы
-            <input id="number" data-field type="text" placeholder="A21-025/2026 или 0734К-2026" />
-          </label>
-          <label class="court-only">
-            Суд
-            <input id="courtName" data-field type="text" placeholder="Название суда" />
-          </label>
-          <label>
-            Эксперт
-            <input id="expertName" data-field type="text" placeholder="ФИО эксперта" />
-          </label>
-          <label class="span-2">
-            Адрес
-            <input id="address" data-field type="text" placeholder="г. Калининград, ..." />
-          </label>
-          <label class="outing-only">
-            Кто едет
-            <input id="whoGoes" data-field type="text" placeholder="Петров" />
-          </label>
-          <label class="outing-only">
-            Кто вёз
-            <input id="driver" data-field type="text" placeholder="Lada" />
-          </label>
-          <label class="outing-only">
-            Стоимость экспертизы
-            <input id="expertisePrice" data-field type="text" placeholder="15000" />
-          </label>
-          <label class="outing-only">
-            Стоимость выезда
-            <input id="tripPrice" data-field type="text" placeholder="3000" />
-          </label>
+          <label><span>Дата</span><input id="courtDate" type="date" /></label>
+          <label><span>Время</span><input id="courtTime" type="time" /></label>
+          <label><span>Номер дела</span><input id="courtCase" type="text" placeholder="A21-025/2026" /></label>
+          <label><span>Номер экспертизы</span><input id="courtExpertise" type="text" placeholder="0734К-2026" /></label>
+          <label class="full"><span>Название суда</span><input id="courtName" type="text" placeholder="Московский районный суд" /></label>
+          <label class="full"><span>Адрес</span><input id="courtAddress" type="text" placeholder="г. Калининград, ул. Примерная, д. 1" /></label>
+          <label class="full"><span>Участник</span><input id="courtPerson" type="text" placeholder="Иванов Иван" /></label>
+          <label class="full"><span>Комментарий / событие</span><input id="courtTitle" type="text" placeholder="суд по делу" /></label>
         </div>
-      </form>
+        <div class="form-actions">
+          <button type="button" class="ghost-btn" data-action="court-template">Шаблон</button>
+          <button type="button" class="primary-btn" data-action="apply-court">Применить</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-panel="outing">
+        <div class="field-grid">
+          <label><span>Дата</span><input id="outingDate" type="date" /></label>
+          <label><span>Время</span><input id="outingTime" type="time" /></label>
+          <label><span>Номер экспертизы</span><input id="outingExpertise" type="text" placeholder="0734К-2026" /></label>
+          <label><span>Эксперт</span><input id="outingExpert" type="text" placeholder="Иванов" /></label>
+          <label class="full"><span>Адрес</span><input id="outingAddress" type="text" placeholder="г. Калининград, ул. Красная, д. 7, кв. 10" /></label>
+          <label class="full"><span>Описание события</span><input id="outingTitle" type="text" placeholder="залитие потолка" /></label>
+          <label><span>Кто едет</span><input id="outingWhoGoes" type="text" placeholder="Петров" /></label>
+          <label><span>Кто вёз</span><input id="outingWhoDrove" type="text" placeholder="Lada" /></label>
+          <label><span>Стоимость экспертизы</span><input id="outingExpertisePrice" type="number" placeholder="15000" /></label>
+          <label><span>Стоимость выезда</span><input id="outingTripPrice" type="number" placeholder="3000" /></label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="ghost-btn" data-action="outing-template">Шаблон</button>
+          <button type="button" class="primary-btn" data-action="apply-outing">Применить</button>
+        </div>
+      </div>
     </section>
 
-    <section class="preview-card">
-      <div class="section-title">Предпросмотр</div>
-      <pre id="preview" class="preview-box">Заполните поля — здесь появится аккуратный предпросмотр.</pre>
+    <section class="draft-card">
+      <div class="draft-head">
+        <div>
+          <div class="eyebrow">Черновик</div>
+          <h2>Готовый текст для отправки</h2>
+        </div>
+      </div>
+      <textarea id="payload" rows="8" placeholder="После нажатия «Применить» здесь появится готовый текст" readonly></textarea>
       <div id="htmlActions" class="actions">
-        <button id="copyBtn" class="secondary" type="button">Скопировать</button>
-        <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
+        <button id="copyBtn" class="ghost-btn" type="button">Скопировать</button>
+        <button id="sendBtn" class="primary-btn" type="button">Отправить в бота</button>
       </div>
       <div id="status" class="status" aria-live="polite"></div>
     </section>
