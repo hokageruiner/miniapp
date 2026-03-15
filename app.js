@@ -2,26 +2,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const tg = window.Telegram?.WebApp || null;
   const isTelegram = !!tg;
 
-  const draftEl = document.getElementById("draft");
+  const draftEl = document.getElementById("payload");
   const statusEl = document.getElementById("status");
-  const htmlActions = document.getElementById("html-actions");
+  const htmlActions = document.getElementById("htmlActions");
+  const copyBtn = document.getElementById("copyBtn");
+  const sendBtn = document.getElementById("sendBtn");
 
-  const btnToday = document.getElementById("btn-today");
-  const btnWeek = document.getElementById("btn-week");
-  const btnCourt = document.getElementById("btn-court");
-  const btnTrip = document.getElementById("btn-trip");
-  const btnUpcoming = document.getElementById("btn-upcoming");
-  const btnCourts = document.getElementById("btn-courts");
-  const btnTrips = document.getElementById("btn-trips");
-  const btnBase = document.getElementById("btn-base");
-
-  const copyBtn = document.getElementById("copy-btn");
-  const sendBtn = document.getElementById("send-btn");
+  const actionButtons = Array.from(document.querySelectorAll("[data-action]"));
 
   function showStatus(text, isError = false) {
     if (!statusEl) return;
     statusEl.textContent = text;
-    statusEl.style.color = isError ? "#ff6b6b" : "";
+    statusEl.dataset.state = isError ? "error" : "ok";
   }
 
   function getDraft() {
@@ -34,18 +26,55 @@ document.addEventListener("DOMContentLoaded", () => {
     updateButtons();
   }
 
+  function applyTelegramTheme() {
+    if (!isTelegram) return;
+    const root = document.documentElement;
+    const params = tg.themeParams || {};
+    const map = {
+      "--tg-bg": params.bg_color,
+      "--tg-text": params.text_color,
+      "--tg-hint": params.hint_color,
+      "--tg-link": params.link_color,
+      "--tg-button": params.button_color,
+      "--tg-button-text": params.button_text_color,
+      "--tg-secondary-bg": params.secondary_bg_color,
+    };
+    Object.entries(map).forEach(([key, value]) => {
+      if (value) root.style.setProperty(key, value);
+    });
+  }
+
+  function configureTelegramButtons() {
+    if (!isTelegram) return;
+
+    if (tg.MainButton) {
+      tg.MainButton.setText("Отправить в бота");
+      tg.MainButton.offClick(sendCurrentDraft);
+      tg.MainButton.onClick(sendCurrentDraft);
+    }
+
+    if (tg.SecondaryButton) {
+      tg.SecondaryButton.setText("Скопировать");
+      if (typeof tg.SecondaryButton.setParams === "function") {
+        tg.SecondaryButton.setParams({ position: "left" });
+      }
+      tg.SecondaryButton.offClick(copyDraft);
+      tg.SecondaryButton.onClick(copyDraft);
+    }
+  }
+
   function updateButtons() {
     const hasText = !!getDraft();
 
     if (sendBtn) sendBtn.disabled = !hasText;
     if (copyBtn) copyBtn.disabled = !hasText;
 
-    if (isTelegram && tg.MainButton && tg.SecondaryButton) {
-      tg.MainButton.setText("Отправить в бота");
+    if (isTelegram && tg.MainButton) {
       if (hasText) tg.MainButton.show();
       else tg.MainButton.hide();
+    }
 
-      tg.SecondaryButton.setText("Скопировать");
+    if (isTelegram && tg.SecondaryButton) {
       if (hasText) tg.SecondaryButton.show();
       else tg.SecondaryButton.hide();
     }
@@ -61,37 +90,42 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       await navigator.clipboard.writeText(text);
       showStatus("Скопировано.");
-    } catch (e) {
+    } catch (error) {
+      console.error(error);
       showStatus("Не удалось скопировать.", true);
     }
   }
 
-  function sendToBot(payload = null) {
-    const text = (payload || getDraft()).trim();
+  function sendPayload(text) {
+    const payload = (text || "").trim();
 
-    if (!text) {
+    if (!payload) {
       showStatus("Поле пустое.", true);
       return;
     }
 
     if (!isTelegram) {
-      setDraft(text);
-      showStatus("В браузере команда только подставлена в поле. Отправка работает внутри Telegram.", true);
+      setDraft(payload);
+      showStatus("В браузере команда только подставлена. Отправка работает внутри Telegram.", true);
       return;
     }
 
     try {
-      tg.sendData(text);
-      showStatus(`Команда отправлена в бота: ${text}`);
-    } catch (e) {
-      console.error(e);
+      tg.sendData(payload);
+      showStatus(`Отправлено в бота: ${payload}`);
+    } catch (error) {
+      console.error(error);
       showStatus("Ошибка при отправке в бота.", true);
     }
   }
 
+  function sendCurrentDraft() {
+    sendPayload(getDraft());
+  }
+
   function quickCommand(command) {
     if (isTelegram) {
-      sendToBot(command);
+      sendPayload(command);
     } else {
       setDraft(command);
       showStatus(`Команда ${command} подставлена в поле.`);
@@ -117,47 +151,40 @@ document.addEventListener("DOMContentLoaded", () => {
     showStatus("Шаблон выезда подставлен.");
   }
 
-  if (btnToday) btnToday.addEventListener("click", () => quickCommand("/today"));
-  if (btnWeek) btnWeek.addEventListener("click", () => quickCommand("/week"));
-  if (btnUpcoming) btnUpcoming.addEventListener("click", () => quickCommand("/upcoming"));
-  if (btnCourts) btnCourts.addEventListener("click", () => quickCommand("/courts"));
-  if (btnTrips) btnTrips.addEventListener("click", () => quickCommand("/trips"));
-  if (btnBase) btnBase.addEventListener("click", () => quickCommand("/base"));
+  const actionMap = {
+    today: () => quickCommand("/today"),
+    week: () => quickCommand("/week"),
+    upcoming: () => quickCommand("/upcoming"),
+    courts: () => quickCommand("/courts"),
+    outings: () => quickCommand("/trips"),
+    base: () => quickCommand("/base"),
+    "court-template": fillCourtTemplate,
+    "outing-template": fillTripTemplate,
+  };
 
-  if (btnCourt) btnCourt.addEventListener("click", fillCourtTemplate);
-  if (btnTrip) btnTrip.addEventListener("click", fillTripTemplate);
+  actionButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const action = button.dataset.action;
+      const handler = actionMap[action];
+      if (handler) handler();
+    });
+  });
 
   if (copyBtn) copyBtn.addEventListener("click", copyDraft);
-  if (sendBtn) sendBtn.addEventListener("click", () => sendToBot());
-
-  if (draftEl) {
-    draftEl.addEventListener("input", updateButtons);
-  }
+  if (sendBtn) sendBtn.addEventListener("click", sendCurrentDraft);
+  if (draftEl) draftEl.addEventListener("input", updateButtons);
 
   if (isTelegram) {
     tg.ready();
     tg.expand();
+    applyTelegramTheme();
+    configureTelegramButtons();
 
-    if (htmlActions) {
-      htmlActions.style.display = "none";
-    }
-
-    if (tg.MainButton) {
-      tg.MainButton.offClick(sendToBot);
-      tg.MainButton.onClick(() => sendToBot());
-    }
-
-    if (tg.SecondaryButton) {
-      tg.SecondaryButton.offClick(copyDraft);
-      tg.SecondaryButton.onClick(copyDraft);
-    }
-
-    showStatus("Mini App подключен. Быстрые кнопки сразу отправляют команды в бота.");
+    if (htmlActions) htmlActions.style.display = "none";
+    showStatus("Mini App подключен. Кнопки работают напрямую через Telegram.");
   } else {
-    if (htmlActions) {
-      htmlActions.style.display = "flex";
-    }
-    showStatus("Открыт обычный браузер. Быстрые кнопки подставляют команды в поле.");
+    if (htmlActions) htmlActions.style.display = "flex";
+    showStatus("Открыт обычный браузер. Кнопки подставляют команды и шаблоны в поле.");
   }
 
   updateButtons();
