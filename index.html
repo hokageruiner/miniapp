@@ -13,7 +13,7 @@
       <div>
         <div class="eyebrow">BNEO</div>
         <h1>Рабочий кабинет</h1>
-        <p>Запиши свои выезды и назначения в суд по представленным шаблонам ниже</p>
+        <p>Создание судов и выездов теперь живёт здесь. Бот сохранит событие и сам напомнит о нём в чате.</p>
       </div>
       <div class="pill">Mini App</div>
     </header>
@@ -22,12 +22,12 @@
       <button class="feature-card" data-action="court-template">
         <span class="icon">⚖️</span>
         <span class="title">Шаблон суда</span>
-        <span class="desc">Готовая форма для назначения в суд</span>
+        <span class="desc">Подставить готовую форму для суда</span>
       </button>
       <button class="feature-card" data-action="outing-template">
         <span class="icon">🚗</span>
         <span class="title">Шаблон выезда</span>
-        <span class="desc">Готовая форма для назначения выезда</span>
+        <span class="desc">Быстро вставить форму выезда</span>
       </button>
       <button class="feature-card" data-action="today">
         <span class="icon">📆</span>
@@ -44,12 +44,12 @@
     <section class="form-card">
       <label for="payload">Черновик сообщения</label>
       <textarea id="payload" rows="7" placeholder="Сюда можно собрать текст, который Mini App отправит боту"></textarea>
-      <div id="browserActions" class="actions">
+      <div id="html-actions" class="actions">
         <button id="copyBtn" class="secondary" type="button">Скопировать</button>
         <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
       </div>
-      <p id="browserHint" class="hint">В Telegram используются нижние встроенные кнопки. В обычном браузере работают кнопки выше.</p>
-      <p id="statusText" class="status" aria-live="polite"></p>
+      <div id="status" class="status"></div>
+      <p class="hint">Внутри Telegram используйте встроенные нижние кнопки. Окно после отправки не закрывается.</p>
     </section>
   </div>
   <script src="app.js"></script>

@@ -8,6 +8,7 @@
   --secondary: rgba(255,255,255,.08);
   --card: rgba(255,255,255,.06);
   --border: rgba(255,255,255,.12);
+  --danger: #ff8b8b;
 }
 
 * { box-sizing: border-box; }
@@ -57,7 +58,7 @@ button.primary, button.secondary {
 }
 button.primary { background: var(--button); color: var(--button-text); }
 button.secondary { background: var(--secondary); color: var(--text); border: 1px solid var(--border); }
+button:disabled { opacity: .55; cursor: not-allowed; }
 .hint { margin-top: 10px; font-size: 13px; }
-
-[hidden] { display: none !important; }
-.status { margin-top: 10px; font-size: 13px; color: var(--hint); min-height: 1.2em; }
+.status { margin-top: 12px; min-height: 22px; color: var(--hint); font-size: 14px; }
+.status.error { color: var(--danger); }
