@@ -2,136 +2,250 @@ document.addEventListener('DOMContentLoaded', () => {
   const tg = window.Telegram?.WebApp || null;
   const isTelegram = Boolean(tg);
 
-  const payloadEl = document.getElementById('payload');
+  const form = document.getElementById('eventForm');
+  const typeEl = document.getElementById('eventType');
+  const titleEl = document.getElementById('title');
+  const datetimeEl = document.getElementById('eventDateTime');
+  const numberEl = document.getElementById('number');
+  const courtEl = document.getElementById('courtName');
+  const expertEl = document.getElementById('expertName');
+  const addressEl = document.getElementById('address');
+  const whoEl = document.getElementById('whoGoes');
+  const driverEl = document.getElementById('driver');
+  const expPriceEl = document.getElementById('expertisePrice');
+  const tripPriceEl = document.getElementById('tripPrice');
+  const previewEl = document.getElementById('preview');
   const statusEl = document.getElementById('status');
   const htmlActions = document.getElementById('htmlActions');
   const copyBtn = document.getElementById('copyBtn');
   const sendBtn = document.getElementById('sendBtn');
-  const actionButtons = Array.from(document.querySelectorAll('[data-action]'));
+  const fields = Array.from(document.querySelectorAll('[data-field]'));
+  const cards = Array.from(document.querySelectorAll('[data-action]'));
 
-  const templates = {
-    'court-template': [
-      '14.03.2026 14:00 суд по делу №A21-025/2026',
-      'суд: Московский районный суд',
-      'адрес: г. Калининград, ул. Примерная, д. 1',
-      'эксперт: Иванов',
-    ].join('\n'),
-    'outing-template': [
-      '0734К-2026 14:00 14.03.2026',
-      'адрес: г. Калининград, ул. Красная, д. 7, кв. 10',
-      'описание: залитие потолка',
-      'эксперт: Иванов',
-      'кто едет: Петров',
-      'кто вёз: Lada',
-      'стоимость экспертизы: 15000',
-      'стоимость выезда: 3000',
-    ].join('\n'),
-  };
+  const companyLogo = document.getElementById('companyLogo');
+  if (companyLogo) {
+    companyLogo.addEventListener('error', () => {
+      companyLogo.style.display = 'none';
+    });
+  }
 
-  const quickCommands = {
-    today: '/today',
-    week: '/week',
-  };
-
-  function showStatus(text, isError = false) {
+  function setStatus(text, kind = 'info') {
     if (!statusEl) return;
     statusEl.textContent = text;
-    statusEl.style.color = isError ? '#ff6b6b' : '';
+    statusEl.className = `status is-${kind}`;
   }
 
-  function getPayload() {
-    return (payloadEl?.value || '').trim();
+  function formatDateForInput(date) {
+    const pad = (value) => String(value).padStart(2, '0');
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   }
 
-  function setPayload(text) {
-    if (!payloadEl) return;
-    payloadEl.value = text;
-    refreshButtons();
+  function nowPlus(hours) {
+    const date = new Date();
+    date.setHours(date.getHours() + hours, 0, 0, 0);
+    return formatDateForInput(date);
   }
 
-  function refreshButtons() {
-    const hasText = Boolean(getPayload());
-    if (copyBtn) copyBtn.disabled = !hasText;
-    if (sendBtn) sendBtn.disabled = !hasText;
+  function currentType() {
+    return (typeEl?.value || 'court').trim();
+  }
 
-    if (isTelegram && tg.MainButton && tg.SecondaryButton) {
-      tg.MainButton.setText('Отправить в бота');
-      tg.SecondaryButton.setText('Скопировать');
-      hasText ? tg.MainButton.show() : tg.MainButton.hide();
-      hasText ? tg.SecondaryButton.show() : tg.SecondaryButton.hide();
+  function setType(nextType) {
+    if (!typeEl) return;
+    typeEl.value = nextType;
+    document.body.dataset.type = nextType;
+    renderPreview();
+  }
+
+  function courtTemplate() {
+    setType('court');
+    titleEl.value = 'Судебное заседание';
+    datetimeEl.value = nowPlus(24);
+    numberEl.value = 'A21-025/2026';
+    courtEl.value = 'Московский районный суд';
+    expertEl.value = 'Иванов';
+    addressEl.value = 'г. Калининград, ул. Примерная, д. 1';
+    whoEl.value = '';
+    driverEl.value = '';
+    expPriceEl.value = '';
+    tripPriceEl.value = '';
+    renderPreview();
+    setStatus('Шаблон суда подставлен.', 'success');
+  }
+
+  function outingTemplate() {
+    setType('outing');
+    titleEl.value = 'Выезд на объект';
+    datetimeEl.value = nowPlus(6);
+    numberEl.value = '0734К-2026';
+    courtEl.value = '';
+    expertEl.value = 'Иванов';
+    addressEl.value = 'г. Калининград, ул. Красная, д. 7, кв. 10';
+    whoEl.value = 'Петров';
+    driverEl.value = 'Lada';
+    expPriceEl.value = '15000';
+    tripPriceEl.value = '3000';
+    renderPreview();
+    setStatus('Шаблон выезда подставлен.', 'success');
+  }
+
+  function payloadFromForm() {
+    const type = currentType();
+    const title = titleEl.value.trim();
+    const dt = datetimeEl.value.trim();
+    const num = numberEl.value.trim();
+    const court = courtEl.value.trim();
+    const expert = expertEl.value.trim();
+    const address = addressEl.value.trim();
+    const who = whoEl.value.trim();
+    const driver = driverEl.value.trim();
+    const expertisePrice = expPriceEl.value.trim();
+    const tripPrice = tripPriceEl.value.trim();
+
+    if (!title || !dt || !num || !address) {
+      return '';
     }
+
+    const [datePart, timePart] = dt.split('T');
+    const [yyyy, mm, dd] = datePart.split('-');
+    const prettyDate = dd && mm && yyyy ? `${dd}.${mm}.${yyyy}` : datePart;
+
+    if (type === 'court') {
+      const lines = [
+        `${prettyDate} ${timePart || '09:00'} суд по делу №${num}`,
+        court ? `суд: ${court}` : '',
+        `адрес: ${address}`,
+        expert ? `эксперт: ${expert}` : '',
+      ].filter(Boolean);
+      return lines.join('\n');
+    }
+
+    const chunks = [
+      `${num} ${timePart || '09:00'} ${prettyDate}`,
+      address,
+      title,
+      expert ? `эксперт: ${expert}` : '',
+      who ? `кто едет: ${who}` : '',
+      driver ? `кто вёз: ${driver}` : '',
+      expertisePrice ? `стоимость экспертизы: ${expertisePrice}` : '',
+      tripPrice ? `стоимость выезда: ${tripPrice}` : '',
+    ].filter(Boolean);
+    return chunks.join(' ');
+  }
+
+  function previewLines() {
+    const lines = [];
+    const typeLabel = currentType() === 'court' ? '⚖️ Суд' : '🚗 Выезд';
+    lines.push(typeLabel);
+    if (titleEl.value.trim()) lines.push(`• Событие: ${titleEl.value.trim()}`);
+    if (datetimeEl.value.trim()) lines.push(`• Дата и время: ${datetimeEl.value.trim().replace('T', ' ')}`);
+    if (numberEl.value.trim()) lines.push(`• Номер: ${numberEl.value.trim()}`);
+    if (courtEl.value.trim()) lines.push(`• Суд: ${courtEl.value.trim()}`);
+    if (addressEl.value.trim()) lines.push(`• Адрес: ${addressEl.value.trim()}`);
+    if (expertEl.value.trim()) lines.push(`• Эксперт: ${expertEl.value.trim()}`);
+    if (whoEl.value.trim()) lines.push(`• Кто едет: ${whoEl.value.trim()}`);
+    if (driverEl.value.trim()) lines.push(`• Кто вёз: ${driverEl.value.trim()}`);
+    if (expPriceEl.value.trim()) lines.push(`• Стоимость экспертизы: ${expPriceEl.value.trim()}`);
+    if (tripPriceEl.value.trim()) lines.push(`• Стоимость выезда: ${tripPriceEl.value.trim()}`);
+    return lines;
+  }
+
+  function renderPreview() {
+    const lines = previewLines();
+    previewEl.textContent = lines.join('\n') || 'Заполните поля — здесь появится аккуратный предпросмотр.';
+    const hasPayload = Boolean(payloadFromForm());
+    if (sendBtn) sendBtn.disabled = !hasPayload;
+    if (copyBtn) copyBtn.disabled = !hasPayload;
   }
 
   async function copyPayload() {
-    const text = getPayload();
-    if (!text) {
-      showStatus('Нечего копировать.', true);
+    const payload = payloadFromForm();
+    if (!payload) {
+      setStatus('Заполните обязательные поля перед копированием.', 'error');
       return;
     }
     try {
-      await navigator.clipboard.writeText(text);
-      showStatus('Скопировано.');
+      await navigator.clipboard.writeText(payload);
+      setStatus('Текст скопирован.', 'success');
     } catch {
-      showStatus('Не удалось скопировать.', true);
+      setStatus('Не удалось скопировать текст.', 'error');
     }
   }
 
-  function sendToBot(text = null) {
-    const payload = (text || getPayload()).trim();
+  function sendToBot(customPayload = null) {
+    const payload = (customPayload || payloadFromForm()).trim();
     if (!payload) {
-      showStatus('Поле пустое.', true);
+      setStatus('Не хватает обязательных полей.', 'error');
       return;
     }
     if (!isTelegram) {
-      setPayload(payload);
-      showStatus('В браузере команда только подставлена. Отправка работает внутри Telegram.', true);
+      setStatus('Отправка работает внутри Telegram Mini App. В браузере можно только копировать.', 'error');
       return;
     }
     try {
       tg.sendData(payload);
-      showStatus(`Отправлено: ${payload}`);
+      setStatus('Форма отправлена в бота.', 'success');
     } catch (error) {
       console.error(error);
-      showStatus('Ошибка при отправке в бота.', true);
+      setStatus('Ошибка при отправке в бота.', 'error');
     }
+  }
+
+  function quickCommand(command) {
+    if (isTelegram) {
+      sendToBot(command);
+      return;
+    }
+    setStatus(`Команда ${command} доступна внутри Telegram.`, 'info');
   }
 
   function handleAction(action) {
-    if (templates[action]) {
-      setPayload(templates[action]);
-      showStatus(action === 'court-template' ? 'Шаблон суда подставлен.' : 'Шаблон выезда подставлен.');
-      return;
+    switch (action) {
+      case 'court-template':
+        courtTemplate();
+        break;
+      case 'outing-template':
+        outingTemplate();
+        break;
+      case 'today':
+        quickCommand('/today');
+        break;
+      case 'week':
+        quickCommand('/week');
+        break;
+      default:
+        setStatus('Неизвестное действие.', 'error');
     }
-    if (quickCommands[action]) {
-      sendToBot(quickCommands[action]);
-      return;
-    }
-    showStatus('Неизвестное действие.', true);
   }
 
-  actionButtons.forEach((button) => {
-    button.addEventListener('click', () => handleAction(button.dataset.action || ''));
+  cards.forEach((card) => {
+    card.addEventListener('click', () => handleAction(card.dataset.action));
   });
 
-  if (copyBtn) copyBtn.addEventListener('click', copyPayload);
-  if (sendBtn) sendBtn.addEventListener('click', () => sendToBot());
-  if (payloadEl) payloadEl.addEventListener('input', refreshButtons);
+  fields.forEach((field) => {
+    field.addEventListener('input', renderPreview);
+    field.addEventListener('change', renderPreview);
+  });
+
+  typeEl?.addEventListener('change', () => setType(typeEl.value));
+  form?.addEventListener('submit', (event) => {
+    event.preventDefault();
+    sendToBot();
+  });
+  copyBtn?.addEventListener('click', copyPayload);
+  sendBtn?.addEventListener('click', () => sendToBot());
 
   if (isTelegram) {
+    document.body.classList.add('is-telegram');
     tg.ready();
     tg.expand();
     if (htmlActions) htmlActions.style.display = 'none';
-    if (tg.MainButton) {
-      tg.MainButton.onClick(() => sendToBot());
-    }
-    if (tg.SecondaryButton) {
-      tg.SecondaryButton.onClick(copyPayload);
-    }
-    showStatus('Mini App подключен. Кнопки готовы.');
+    setStatus('Mini App подключён. Быстрые кнопки отправляют команды в бота.', 'success');
   } else {
     if (htmlActions) htmlActions.style.display = 'flex';
-    showStatus('Открыт обычный браузер. Шаблоны и копирование работают локально.');
+    setStatus('Открыт обычный браузер. Доступны шаблоны, предпросмотр и копирование.', 'info');
   }
 
-  refreshButtons();
+  setType(currentType());
+  courtTemplate();
 });

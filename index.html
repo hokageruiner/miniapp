@@ -5,98 +5,107 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>BNEO Cabinet</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
-<body>
+<body data-type="court">
   <div class="app-shell">
     <header class="hero-card">
-      <div class="brand">
-        <img class="brand-logo" src="logo.png" alt="Логотип БНЕО" />
+      <div class="hero-main">
+        <img id="companyLogo" class="company-logo" src="assets/logo.png" alt="Лого BNEO" />
         <div>
-          <div class="eyebrow">Бюро независимой экспертизы и оценки</div>
+          <div class="eyebrow">BNEO</div>
           <h1>Рабочий кабинет</h1>
-          <p>Суды, выезды и быстрые команды в одном Mini App.</p>
+          <p>Соберите суд или выезд по отдельным полям, проверьте предпросмотр и отправьте форму прямо в бота.</p>
         </div>
       </div>
-      <div class="pill">BNEO MINI APP</div>
+      <div class="pill">Mini App</div>
     </header>
 
-    <section class="quick-grid">
-      <button class="feature-card" type="button" data-action="today">
-        <span class="icon">📆</span>
-        <span class="title">На сегодня</span>
-        <span class="desc">Сразу отправить /today в бота</span>
-      </button>
-      <button class="feature-card" type="button" data-action="week">
-        <span class="icon">🗓️</span>
-        <span class="title">На неделю</span>
-        <span class="desc">Сразу отправить /week в бота</span>
-      </button>
+    <section class="grid">
       <button class="feature-card" type="button" data-action="court-template">
         <span class="icon">⚖️</span>
         <span class="title">Шаблон суда</span>
-        <span class="desc">Заполнить поля суда</span>
+        <span class="desc">Подставить форму суда</span>
       </button>
       <button class="feature-card" type="button" data-action="outing-template">
         <span class="icon">🚗</span>
         <span class="title">Шаблон выезда</span>
-        <span class="desc">Заполнить поля выезда</span>
+        <span class="desc">Подставить форму выезда</span>
+      </button>
+      <button class="feature-card" type="button" data-action="today">
+        <span class="icon">📆</span>
+        <span class="title">На сегодня</span>
+        <span class="desc">Сразу отправить /today</span>
+      </button>
+      <button class="feature-card" type="button" data-action="week">
+        <span class="icon">🗓️</span>
+        <span class="title">На неделю</span>
+        <span class="desc">Сразу отправить /week</span>
       </button>
     </section>
 
-    <section class="layout-grid">
-      <article class="form-card mode-card active" data-mode-card="court">
-        <div class="section-head">
-          <h2>Суд</h2>
-          <button class="chip active" type="button" data-mode="court">Активно</button>
-        </div>
+    <section class="form-card">
+      <form id="eventForm" novalidate>
         <div class="field-grid">
-          <label>Дата<input id="court-date" type="date" /></label>
-          <label>Время<input id="court-time" type="time" /></label>
-          <label>Номер дела<input id="court-case" type="text" placeholder="A21-025/2026" /></label>
-          <label>Суд<input id="court-name" type="text" placeholder="Московский районный суд" /></label>
-          <label class="full">Адрес<input id="court-address" type="text" placeholder="г. Калининград, ул. Примерная, д. 1" /></label>
-          <label class="full">Описание<input id="court-title" type="text" placeholder="суд по делу №A21-025/2026" /></label>
+          <label>
+            Тип события
+            <select id="eventType" data-field>
+              <option value="court">Суд</option>
+              <option value="outing">Выезд</option>
+            </select>
+          </label>
+          <label>
+            Название
+            <input id="title" data-field type="text" placeholder="Судебное заседание / Выезд на объект" />
+          </label>
+          <label>
+            Дата и время
+            <input id="eventDateTime" data-field type="datetime-local" />
+          </label>
+          <label>
+            Номер дела / экспертизы
+            <input id="number" data-field type="text" placeholder="A21-025/2026 или 0734К-2026" />
+          </label>
+          <label class="court-only">
+            Суд
+            <input id="courtName" data-field type="text" placeholder="Название суда" />
+          </label>
+          <label>
+            Эксперт
+            <input id="expertName" data-field type="text" placeholder="ФИО эксперта" />
+          </label>
+          <label class="span-2">
+            Адрес
+            <input id="address" data-field type="text" placeholder="г. Калининград, ..." />
+          </label>
+          <label class="outing-only">
+            Кто едет
+            <input id="whoGoes" data-field type="text" placeholder="Петров" />
+          </label>
+          <label class="outing-only">
+            Кто вёз
+            <input id="driver" data-field type="text" placeholder="Lada" />
+          </label>
+          <label class="outing-only">
+            Стоимость экспертизы
+            <input id="expertisePrice" data-field type="text" placeholder="15000" />
+          </label>
+          <label class="outing-only">
+            Стоимость выезда
+            <input id="tripPrice" data-field type="text" placeholder="3000" />
+          </label>
         </div>
-      </article>
-
-      <article class="form-card mode-card" data-mode-card="outing">
-        <div class="section-head">
-          <h2>Выезд</h2>
-          <button class="chip" type="button" data-mode="outing">Сделать активным</button>
-        </div>
-        <div class="field-grid">
-          <label>Номер экспертизы<input id="outing-number" type="text" placeholder="0734К-2026" /></label>
-          <label>Дата<input id="outing-date" type="date" /></label>
-          <label>Время<input id="outing-time" type="time" /></label>
-          <label>Эксперт<input id="outing-expert" type="text" placeholder="Иванов" /></label>
-          <label>Кто едет<input id="outing-goes" type="text" placeholder="Петров" /></label>
-          <label>Кто вёз<input id="outing-drove" type="text" placeholder="Lada" /></label>
-          <label>Стоимость экспертизы<input id="outing-price" type="number" inputmode="decimal" placeholder="15000" /></label>
-          <label>Стоимость выезда<input id="outing-trip-price" type="number" inputmode="decimal" placeholder="3000" /></label>
-          <label class="full">Адрес<input id="outing-address" type="text" placeholder="г. Калининград, ул. Красная, д. 7, кв. 10" /></label>
-          <label class="full">Описание<input id="outing-title" type="text" placeholder="залитие потолка" /></label>
-        </div>
-      </article>
+      </form>
     </section>
 
     <section class="preview-card">
-      <div class="section-head compact">
-        <div>
-          <h2>Предпросмотр отправки</h2>
-          <p>Бот получит это сообщение и поставит напоминания автоматически.</p>
-        </div>
-        <div class="action-row">
-          <button id="copyBtn" class="secondary" type="button">Скопировать</button>
-          <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
-        </div>
+      <div class="section-title">Предпросмотр</div>
+      <pre id="preview" class="preview-box">Заполните поля — здесь появится аккуратный предпросмотр.</pre>
+      <div id="htmlActions" class="actions">
+        <button id="copyBtn" class="secondary" type="button">Скопировать</button>
+        <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
       </div>
-      <div id="previewCard" class="preview-body empty">
-        <div class="preview-line muted">Сначала выберите шаблон или заполните поля.</div>
-      </div>
-      <textarea id="payload" class="payload-hidden" aria-hidden="true"></textarea>
       <div id="status" class="status" aria-live="polite"></div>
-      <p class="hint">Важно: чтобы данные дошли в бот как <code>web_app_data</code>, Mini App должен открываться кнопкой <b>🧩 Mini App</b> на нижней клавиатуре.</p>
     </section>
   </div>
   <script src="app.js"></script>
