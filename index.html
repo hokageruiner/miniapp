@@ -5,51 +5,152 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>BNEO Cabinet</title>
   <link rel="stylesheet" href="styles.css" />
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="https://telegram.org/js/telegram-web-app.js?61"></script>
 </head>
 <body>
   <div class="app-shell">
     <header class="hero-card">
-      <div>
-        <div class="eyebrow">BNEO</div>
+      <img class="hero-logo" src="logo.png" alt="Логотип Бюро независимой экспертизы и оценки" />
+      <div class="hero-copy">
+        <div class="eyebrow">BNEO SPOT</div>
         <h1>Рабочий кабинет</h1>
-        <p>Быстрый запуск судов и выездов прямо внутри Telegram.</p>
+        <p>Суды и выезды теперь собираются по отдельным полям, а перед отправкой показываются аккуратной карточкой.</p>
+        <div class="hero-badges">
+          <span class="pill">Mini App</span>
+          <span class="pill pill-soft">Экспертиза и оценка</span>
+        </div>
       </div>
-      <div class="pill">Mini App</div>
     </header>
 
-    <section class="grid">
+    <section class="toolbar-card">
       <button class="feature-card" type="button" data-action="court-template">
         <span class="icon">⚖️</span>
         <span class="title">Шаблон суда</span>
-        <span class="desc">Подставить готовую форму для суда</span>
+        <span class="desc">Заполнить поля примером суда</span>
       </button>
       <button class="feature-card" type="button" data-action="outing-template">
         <span class="icon">🚗</span>
         <span class="title">Шаблон выезда</span>
-        <span class="desc">Быстро вставить форму выезда</span>
+        <span class="desc">Заполнить поля примером выезда</span>
       </button>
       <button class="feature-card" type="button" data-action="today">
         <span class="icon">📆</span>
         <span class="title">На сегодня</span>
-        <span class="desc">Показать список задач на сегодня</span>
+        <span class="desc">Отправить команду в бот</span>
       </button>
       <button class="feature-card" type="button" data-action="week">
         <span class="icon">🗓️</span>
         <span class="title">На неделю</span>
-        <span class="desc">Открыть недельную сводку</span>
+        <span class="desc">Попросить недельную сводку</span>
       </button>
     </section>
 
-    <section class="form-card">
-      <label for="payload">Черновик сообщения</label>
-      <textarea id="payload" rows="7" placeholder="Сюда можно собрать текст, который Mini App отправит боту"></textarea>
-      <div id="htmlActions" class="actions">
-        <button id="copyBtn" class="secondary" type="button">Скопировать</button>
-        <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
-      </div>
-      <div id="status" class="status" aria-live="polite"></div>
-      <p class="hint">В Telegram используются нижние встроенные кнопки. В обычном браузере работают шаблоны и копирование.</p>
+    <section class="editor-grid">
+      <article class="form-card">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Форма</div>
+            <h2>Данные события</h2>
+          </div>
+          <div class="type-switch" role="tablist" aria-label="Тип события">
+            <button class="switch-btn is-active" type="button" data-type="court">Суд</button>
+            <button class="switch-btn" type="button" data-type="outing">Выезд</button>
+          </div>
+        </div>
+
+        <div class="form-grid common-fields">
+          <label class="field">
+            <span>Дата</span>
+            <input id="date" type="date" />
+          </label>
+          <label class="field">
+            <span>Время</span>
+            <input id="time" type="time" />
+          </label>
+          <label class="field field-wide">
+            <span>Алиас чата</span>
+            <input id="chat_alias" type="text" placeholder="Например: офис" />
+          </label>
+        </div>
+
+        <div id="courtFields" class="type-panel form-grid">
+          <label class="field field-wide">
+            <span>Событие</span>
+            <input id="court_title" type="text" placeholder="Суд по делу о залитии" />
+          </label>
+          <label class="field">
+            <span>Номер дела</span>
+            <input id="case_number" type="text" placeholder="A21-025/2026" />
+          </label>
+          <label class="field">
+            <span>Номер экспертизы</span>
+            <input id="court_expertise_number" type="text" placeholder="0734К-2026" />
+          </label>
+          <label class="field field-wide">
+            <span>Суд</span>
+            <input id="court_name" type="text" placeholder="Московский районный суд" />
+          </label>
+          <label class="field field-wide">
+            <span>Адрес</span>
+            <input id="court_address" type="text" placeholder="г. Калининград, ул. Примерная, д. 1" />
+          </label>
+          <label class="field field-wide">
+            <span>Участник</span>
+            <input id="assigned_person" type="text" placeholder="Иванов" />
+          </label>
+        </div>
+
+        <div id="outingFields" class="type-panel form-grid is-hidden">
+          <label class="field field-wide">
+            <span>Событие</span>
+            <input id="outing_title" type="text" placeholder="Залитие потолка" />
+          </label>
+          <label class="field">
+            <span>Номер экспертизы</span>
+            <input id="outing_expertise_number" type="text" placeholder="0734К-2026" />
+          </label>
+          <label class="field field-wide">
+            <span>Адрес</span>
+            <input id="outing_address" type="text" placeholder="г. Калининград, ул. Красная, д. 7, кв. 10" />
+          </label>
+          <label class="field">
+            <span>Эксперт</span>
+            <input id="expert_name" type="text" placeholder="Иванов" />
+          </label>
+          <label class="field">
+            <span>Кто едет</span>
+            <input id="who_goes" type="text" placeholder="Петров" />
+          </label>
+          <label class="field">
+            <span>Кто вёз</span>
+            <input id="who_drove" type="text" placeholder="Lada" />
+          </label>
+          <label class="field">
+            <span>Стоимость экспертизы</span>
+            <input id="expertise_price" type="number" min="0" step="0.01" placeholder="15000" />
+          </label>
+          <label class="field">
+            <span>Стоимость выезда</span>
+            <input id="trip_price" type="number" min="0" step="0.01" placeholder="3000" />
+          </label>
+        </div>
+      </article>
+
+      <article class="preview-card">
+        <div class="section-head">
+          <div>
+            <div class="eyebrow">Черновик</div>
+            <h2>Предпросмотр сообщения</h2>
+          </div>
+        </div>
+        <pre id="preview" class="preview-box">Заполните форму или выберите шаблон.</pre>
+        <div id="htmlActions" class="actions">
+          <button id="copyBtn" class="secondary" type="button">Скопировать</button>
+          <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
+        </div>
+        <div id="status" class="status" aria-live="polite"></div>
+        <p class="hint">Важно: чтобы форма дошла до бота, Mini App должен открываться кнопкой reply-клавиатуры <b>🧩 Mini App</b>.</p>
+      </article>
     </section>
   </div>
   <script src="app.js"></script>
