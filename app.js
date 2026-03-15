@@ -1,246 +1,286 @@
+
 document.addEventListener("DOMContentLoaded", () => {
   const tg = window.Telegram?.WebApp || null;
   const isTelegram = !!tg;
-  const state = { type: "court" };
 
-  const els = {
-    status: document.getElementById("status"),
-    preview: document.getElementById("preview"),
-    htmlActions: document.getElementById("htmlActions"),
-    copyBtn: document.getElementById("copyBtn"),
-    sendBtn: document.getElementById("sendBtn"),
-    courtFields: document.getElementById("courtFields"),
-    outingFields: document.getElementById("outingFields"),
-    switchBtns: Array.from(document.querySelectorAll(".switch-btn")),
-    inputs: Array.from(document.querySelectorAll("input")),
+  const state = { mode: "court" };
+
+  const payloadEl = document.getElementById("payload");
+  const statusEl = document.getElementById("status");
+  const previewCard = document.getElementById("previewCard");
+  const copyBtn = document.getElementById("copyBtn");
+  const sendBtn = document.getElementById("sendBtn");
+
+  const modeButtons = document.querySelectorAll("[data-mode]");
+  const modeCards = document.querySelectorAll("[data-mode-card]");
+  const actionButtons = document.querySelectorAll("[data-action]");
+
+  const fields = {
+    courtDate: document.getElementById("court-date"),
+    courtTime: document.getElementById("court-time"),
+    courtCase: document.getElementById("court-case"),
+    courtName: document.getElementById("court-name"),
+    courtAddress: document.getElementById("court-address"),
+    courtTitle: document.getElementById("court-title"),
+    outingNumber: document.getElementById("outing-number"),
+    outingDate: document.getElementById("outing-date"),
+    outingTime: document.getElementById("outing-time"),
+    outingExpert: document.getElementById("outing-expert"),
+    outingGoes: document.getElementById("outing-goes"),
+    outingDrove: document.getElementById("outing-drove"),
+    outingPrice: document.getElementById("outing-price"),
+    outingTripPrice: document.getElementById("outing-trip-price"),
+    outingAddress: document.getElementById("outing-address"),
+    outingTitle: document.getElementById("outing-title"),
   };
 
-  const templates = {
-    court: {
-      date: "2026-03-14",
-      time: "14:00",
-      chat_alias: "",
-      court_title: "Суд по делу о залитии",
-      case_number: "A21-025/2026",
-      court_expertise_number: "0734К-2026",
-      court_name: "Московский районный суд",
-      court_address: "г. Калининград, ул. Примерная, д. 1",
-      assigned_person: "Иванов",
-    },
-    outing: {
-      date: "2026-03-14",
-      time: "14:00",
-      chat_alias: "",
-      outing_title: "Залитие потолка",
-      outing_expertise_number: "0734К-2026",
-      outing_address: "г. Калининград, ул. Красная, д. 7, кв. 10",
-      expert_name: "Иванов",
-      who_goes: "Петров",
-      who_drove: "Lada",
-      expertise_price: "15000",
-      trip_price: "3000",
-    },
-  };
-
-  function setStatus(text, mode = "info") {
-    if (!els.status) return;
-    els.status.textContent = text;
-    els.status.className = `status is-${mode}`;
+  function setStatus(text, type = "") {
+    if (!statusEl) return;
+    statusEl.textContent = text || "";
+    statusEl.classList.remove("is-success", "is-error");
+    if (type === "success") statusEl.classList.add("is-success");
+    if (type === "error") statusEl.classList.add("is-error");
   }
 
-  function input(id) {
-    return document.getElementById(id);
+  function formatDate(value) {
+    if (!value) return "";
+    const [y, m, d] = value.split("-");
+    if (!y || !m || !d) return value;
+    return `${d}.${m}.${y}`;
   }
 
-  function getCommonData() {
-    return {
-      date: input("date")?.value || "",
-      time: input("time")?.value || "",
-      chat_alias: input("chat_alias")?.value.trim() || "",
-    };
+  function escapeHtml(text) {
+    return String(text ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
-  function getCourtData() {
-    return {
-      ...getCommonData(),
-      title: input("court_title")?.value.trim() || "",
-      case_number: input("case_number")?.value.trim() || "",
-      expertise_number: input("court_expertise_number")?.value.trim() || "",
-      court_name: input("court_name")?.value.trim() || "",
-      address: input("court_address")?.value.trim() || "",
-      assigned_person: input("assigned_person")?.value.trim() || "",
-    };
+  function setMode(mode) {
+    state.mode = mode;
+    modeCards.forEach((card) => card.classList.toggle("active", card.dataset.modeCard === mode));
+    modeButtons.forEach((btn) => {
+      const active = btn.dataset.mode === mode;
+      btn.classList.toggle("active", active);
+      btn.textContent = active ? "Активно" : "Сделать активным";
+    });
+    updatePreview();
   }
 
-  function getOutingData() {
-    return {
-      ...getCommonData(),
-      title: input("outing_title")?.value.trim() || "",
-      expertise_number: input("outing_expertise_number")?.value.trim() || "",
-      address: input("outing_address")?.value.trim() || "",
-      expert_name: input("expert_name")?.value.trim() || "",
-      who_goes: input("who_goes")?.value.trim() || "",
-      who_drove: input("who_drove")?.value.trim() || "",
-      expertise_price: input("expertise_price")?.value.trim() || "",
-      trip_price: input("trip_price")?.value.trim() || "",
-    };
+  function fillTodayDefaults() {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+    const time = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    return { date, time };
   }
 
-  function buildPreview(type = state.type) {
-    const data = type === "outing" ? getOutingData() : getCourtData();
-    const lines = [];
-    lines.push(type === "outing" ? "ВЫЕЗД" : "СУД");
-    lines.push(`Дата: ${data.date || "—"}`);
-    lines.push(`Время: ${data.time || "—"}`);
-    if (data.chat_alias) lines.push(`Алиас чата: ${data.chat_alias}`);
-
-    if (type === "outing") {
-      lines.push(`Событие: ${data.title || "—"}`);
-      lines.push(`Номер экспертизы: ${data.expertise_number || "—"}`);
-      lines.push(`Адрес: ${data.address || "—"}`);
-      lines.push(`Эксперт: ${data.expert_name || "—"}`);
-      lines.push(`Кто едет: ${data.who_goes || "—"}`);
-      lines.push(`Кто вёз: ${data.who_drove || "—"}`);
-      lines.push(`Стоимость экспертизы: ${data.expertise_price || "—"}`);
-      lines.push(`Стоимость выезда: ${data.trip_price || "—"}`);
-    } else {
-      lines.push(`Событие: ${data.title || "—"}`);
-      lines.push(`Номер дела: ${data.case_number || "—"}`);
-      lines.push(`Номер экспертизы: ${data.expertise_number || "—"}`);
-      lines.push(`Суд: ${data.court_name || "—"}`);
-      lines.push(`Адрес: ${data.address || "—"}`);
-      lines.push(`Участник: ${data.assigned_person || "—"}`);
-    }
-    return lines.join("
-");
+  function fillCourtTemplate() {
+    const { date, time } = fillTodayDefaults();
+    fields.courtDate.value = date;
+    fields.courtTime.value = time;
+    fields.courtCase.value = "A21-025/2026";
+    fields.courtName.value = "Московский районный суд";
+    fields.courtAddress.value = "г. Калининград, ул. Примерная, д. 1";
+    fields.courtTitle.value = "суд по делу №A21-025/2026";
+    setMode("court");
+    setStatus("Шаблон суда подставлен.", "success");
   }
 
-  function currentCreatePayload() {
-    const data = state.type === "outing" ? getOutingData() : getCourtData();
-    return {
-      kind: "create",
-      reminder_type: state.type,
-      data,
-      source_text: buildPreview(state.type),
-    };
+  function fillOutingTemplate() {
+    const { date, time } = fillTodayDefaults();
+    fields.outingNumber.value = "0734К-2026";
+    fields.outingDate.value = date;
+    fields.outingTime.value = time;
+    fields.outingExpert.value = "Иванов";
+    fields.outingGoes.value = "Петров";
+    fields.outingDrove.value = "Lada";
+    fields.outingPrice.value = "15000";
+    fields.outingTripPrice.value = "3000";
+    fields.outingAddress.value = "г. Калининград, ул. Красная, д. 7, кв. 10";
+    fields.outingTitle.value = "залитие потолка";
+    setMode("outing");
+    setStatus("Шаблон выезда подставлен.", "success");
+  }
+
+  function buildCourtPayload() {
+    const date = formatDate(fields.courtDate.value);
+    const time = fields.courtTime.value;
+    const caseNumber = fields.courtCase.value.trim();
+    const courtName = fields.courtName.value.trim();
+    const address = fields.courtAddress.value.trim();
+    const title = fields.courtTitle.value.trim();
+
+    if (!date || !time || !title) return "";
+
+    const lines = [`${date} ${time} ${title}`];
+    if (courtName) lines.push(`суд: ${courtName}`);
+    if (address) lines.push(`адрес: ${address}`);
+    if (caseNumber && !title.includes(caseNumber)) lines.push(`дело №${caseNumber}`);
+    return lines.join("\n");
+  }
+
+  function buildOutingPayload() {
+    const number = fields.outingNumber.value.trim();
+    const date = formatDate(fields.outingDate.value);
+    const time = fields.outingTime.value;
+    const expert = fields.outingExpert.value.trim();
+    const goes = fields.outingGoes.value.trim();
+    const drove = fields.outingDrove.value.trim();
+    const price = fields.outingPrice.value.trim();
+    const tripPrice = fields.outingTripPrice.value.trim();
+    const address = fields.outingAddress.value.trim();
+    const title = fields.outingTitle.value.trim();
+
+    if (!number || !date || !time || !address || !title) return "";
+
+    const parts = [`${number} ${time} ${date} ${address} ${title}`];
+    if (expert) parts.push(`эксперт: ${expert}`);
+    if (goes) parts.push(`кто едет: ${goes}`);
+    if (drove) parts.push(`кто вёз: ${drove}`);
+    if (price) parts.push(`стоимость экспертизы: ${price}`);
+    if (tripPrice) parts.push(`стоимость выезда: ${tripPrice}`);
+    return parts.join(" ");
+  }
+
+  function getPayload() {
+    return state.mode === "court" ? buildCourtPayload() : buildOutingPayload();
+  }
+
+  function previewCourt() {
+    return [
+      ["Дата", formatDate(fields.courtDate.value) || "—"],
+      ["Время", fields.courtTime.value || "—"],
+      ["Номер дела", fields.courtCase.value.trim() || "—"],
+      ["Суд", fields.courtName.value.trim() || "—"],
+      ["Адрес", fields.courtAddress.value.trim() || "—"],
+      ["Описание", fields.courtTitle.value.trim() || "—"],
+    ];
+  }
+
+  function previewOuting() {
+    return [
+      ["Экспертиза", fields.outingNumber.value.trim() || "—"],
+      ["Дата", formatDate(fields.outingDate.value) || "—"],
+      ["Время", fields.outingTime.value || "—"],
+      ["Адрес", fields.outingAddress.value.trim() || "—"],
+      ["Описание", fields.outingTitle.value.trim() || "—"],
+      ["Эксперт", fields.outingExpert.value.trim() || "—"],
+      ["Кто едет", fields.outingGoes.value.trim() || "—"],
+      ["Кто вёз", fields.outingDrove.value.trim() || "—"],
+      ["Стоимость экспертизы", fields.outingPrice.value.trim() || "—"],
+      ["Стоимость выезда", fields.outingTripPrice.value.trim() || "—"],
+    ];
   }
 
   function updatePreview() {
-    const preview = buildPreview(state.type);
-    if (els.preview) els.preview.textContent = preview;
-    const hasRequired = Boolean(getCommonData().date && getCommonData().time);
-    if (els.sendBtn) els.sendBtn.disabled = !hasRequired;
-    if (els.copyBtn) els.copyBtn.disabled = false;
+    const payload = getPayload();
+    payloadEl.value = payload;
+    const lines = state.mode === "court" ? previewCourt() : previewOuting();
+
+    previewCard.classList.remove("empty");
+    previewCard.innerHTML = lines
+      .map(([label, value]) => `<div class="preview-line"><span class="preview-label">${escapeHtml(label)}:</span><strong>${escapeHtml(value)}</strong></div>`)
+      .join("");
+
+    const hasPayload = Boolean(payload);
+    sendBtn.disabled = !hasPayload;
+    copyBtn.disabled = !hasPayload;
+
     if (isTelegram && tg.MainButton && tg.SecondaryButton) {
       tg.MainButton.setText("Отправить в бота");
-      hasRequired ? tg.MainButton.show() : tg.MainButton.hide();
       tg.SecondaryButton.setText("Скопировать");
-      tg.SecondaryButton.show();
+      if (hasPayload) {
+        tg.MainButton.show();
+        tg.SecondaryButton.show();
+      } else {
+        tg.MainButton.hide();
+        tg.SecondaryButton.hide();
+      }
     }
   }
 
-  function switchType(type) {
-    state.type = type;
-    els.switchBtns.forEach((btn) => btn.classList.toggle("is-active", btn.dataset.type === type));
-    els.courtFields?.classList.toggle("is-hidden", type !== "court");
-    els.outingFields?.classList.toggle("is-hidden", type !== "outing");
-    updatePreview();
-  }
-
-  function applyTemplate(type) {
-    const template = templates[type];
-    if (!template) return;
-    switchType(type);
-    Object.entries(template).forEach(([key, value]) => {
-      const el = input(key);
-      if (el) el.value = value;
-    });
-    updatePreview();
-    setStatus(type === "court" ? "Шаблон суда подставлен." : "Шаблон выезда подставлен.", "success");
-  }
-
-  async function copyPreview() {
-    const text = buildPreview(state.type);
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus("Черновик скопирован.", "success");
-    } catch {
-      setStatus("Не удалось скопировать черновик.", "error");
-    }
-  }
-
-  function sendPayload(rawPayload) {
-    if (!isTelegram) {
-      setStatus("В обычном браузере отправка в бота недоступна. Используйте копирование.", "error");
+  async function copyPayload() {
+    const payload = getPayload();
+    if (!payload) {
+      setStatus("Сначала заполните обязательные поля.", "error");
       return;
     }
     try {
-      tg.sendData(JSON.stringify(rawPayload));
-      setStatus("Форма отправлена в бота.", "success");
+      await navigator.clipboard.writeText(payload);
+      setStatus("Текст скопирован.", "success");
+    } catch (error) {
+      setStatus("Не удалось скопировать текст.", "error");
+    }
+  }
+
+  function sendToBot(payload = null) {
+    const text = (payload || getPayload()).trim();
+    if (!text) {
+      setStatus("Сначала заполните обязательные поля.", "error");
+      return;
+    }
+
+    if (!isTelegram) {
+      payloadEl.value = text;
+      setStatus("В обычном браузере отправка не работает. Откройте Mini App внутри Telegram.", "error");
+      return;
+    }
+
+    try {
+      tg.sendData(text);
+      setStatus(`Отправлено в бота: ${text.startsWith("/") ? text : "форма"}.`, "success");
     } catch (error) {
       console.error(error);
-      setStatus("Ошибка при отправке формы в бота.", "error");
+      setStatus("Ошибка при отправке в бота.", "error");
     }
   }
 
-  function sendCurrentForm() {
-    const common = getCommonData();
-    if (!common.date || !common.time) {
-      setStatus("Укажите дату и время.", "error");
-      return;
+  function quickCommand(command) {
+    if (isTelegram) {
+      sendToBot(command);
+    } else {
+      payloadEl.value = command;
+      setStatus(`Команда ${command} подготовлена. Отправка доступна внутри Telegram.`, "error");
     }
-    sendPayload(currentCreatePayload());
   }
 
-  function sendCommand(command) {
-    const payload = { kind: "command", command };
-    if (!isTelegram) {
-      if (els.preview) els.preview.textContent = `/${command}`;
-      setStatus(`Команда /${command} подготовлена. В браузере её можно только скопировать.`, "info");
-      return;
-    }
-    sendPayload(payload);
-  }
-
-  document.querySelectorAll("[data-action]").forEach((button) => {
+  actionButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const action = button.dataset.action;
-      if (action === "court-template") return applyTemplate("court");
-      if (action === "outing-template") return applyTemplate("outing");
-      if (action === "today") return sendCommand("today");
-      if (action === "week") return sendCommand("week");
+      if (action === "today") quickCommand("/today");
+      if (action === "week") quickCommand("/week");
+      if (action === "court-template") fillCourtTemplate();
+      if (action === "outing-template") fillOutingTemplate();
+      updatePreview();
     });
   });
 
-  els.switchBtns.forEach((button) => {
-    button.addEventListener("click", () => switchType(button.dataset.type));
+  modeButtons.forEach((button) => {
+    button.addEventListener("click", () => setMode(button.dataset.mode));
   });
 
-  els.inputs.forEach((field) => {
-    field.addEventListener("input", updatePreview);
+  Object.values(fields).forEach((field) => {
+    field?.addEventListener("input", updatePreview);
   });
 
-  els.copyBtn?.addEventListener("click", copyPreview);
-  els.sendBtn?.addEventListener("click", sendCurrentForm);
+  copyBtn?.addEventListener("click", copyPayload);
+  sendBtn?.addEventListener("click", () => sendToBot());
 
   if (isTelegram) {
-    document.body.classList.add("is-telegram");
     tg.ready();
     tg.expand();
-    tg.MainButton.onClick(sendCurrentForm);
-    tg.SecondaryButton.onClick(copyPreview);
-    if (els.htmlActions) els.htmlActions.style.display = "none";
-    setStatus("Mini App подключен. Формы и быстрые команды активны.", "success");
+    tg.MainButton?.offClick(sendToBot);
+    tg.MainButton?.onClick(() => sendToBot());
+    tg.SecondaryButton?.offClick(copyPayload);
+    tg.SecondaryButton?.onClick(copyPayload);
+    setStatus("Mini App подключен. Быстрые команды и формы готовы к отправке.", "success");
   } else {
-    setStatus("Открыт браузер. Здесь доступны шаблоны, предпросмотр и копирование.", "info");
+    setStatus("Открыт обычный браузер. Здесь можно заполнить форму и проверить предпросмотр.", "");
   }
 
-  const now = new Date();
-  const dateValue = now.toISOString().slice(0, 10);
-  const timeValue = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  if (input("date") && !input("date").value) input("date").value = dateValue;
-  if (input("time") && !input("time").value) input("time").value = timeValue;
-
-  switchType("court");
+  fillCourtTemplate();
   updatePreview();
 });

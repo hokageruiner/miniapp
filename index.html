@@ -10,147 +10,93 @@
 <body>
   <div class="app-shell">
     <header class="hero-card">
-      <img class="hero-logo" src="logo.png" alt="Логотип Бюро независимой экспертизы и оценки" />
-      <div class="hero-copy">
-        <div class="eyebrow">BNEO SPOT</div>
-        <h1>Рабочий кабинет</h1>
-        <p>Суды и выезды теперь собираются по отдельным полям, а перед отправкой показываются аккуратной карточкой.</p>
-        <div class="hero-badges">
-          <span class="pill">Mini App</span>
-          <span class="pill pill-soft">Экспертиза и оценка</span>
+      <div class="brand">
+        <img class="brand-logo" src="logo.png" alt="Логотип БНЕО" />
+        <div>
+          <div class="eyebrow">Бюро независимой экспертизы и оценки</div>
+          <h1>Рабочий кабинет</h1>
+          <p>Суды, выезды и быстрые команды в одном Mini App.</p>
         </div>
       </div>
+      <div class="pill">BNEO MINI APP</div>
     </header>
 
-    <section class="toolbar-card">
-      <button class="feature-card" type="button" data-action="court-template">
-        <span class="icon">⚖️</span>
-        <span class="title">Шаблон суда</span>
-        <span class="desc">Заполнить поля примером суда</span>
-      </button>
-      <button class="feature-card" type="button" data-action="outing-template">
-        <span class="icon">🚗</span>
-        <span class="title">Шаблон выезда</span>
-        <span class="desc">Заполнить поля примером выезда</span>
-      </button>
+    <section class="quick-grid">
       <button class="feature-card" type="button" data-action="today">
         <span class="icon">📆</span>
         <span class="title">На сегодня</span>
-        <span class="desc">Отправить команду в бот</span>
+        <span class="desc">Сразу отправить /today в бота</span>
       </button>
       <button class="feature-card" type="button" data-action="week">
         <span class="icon">🗓️</span>
         <span class="title">На неделю</span>
-        <span class="desc">Попросить недельную сводку</span>
+        <span class="desc">Сразу отправить /week в бота</span>
+      </button>
+      <button class="feature-card" type="button" data-action="court-template">
+        <span class="icon">⚖️</span>
+        <span class="title">Шаблон суда</span>
+        <span class="desc">Заполнить поля суда</span>
+      </button>
+      <button class="feature-card" type="button" data-action="outing-template">
+        <span class="icon">🚗</span>
+        <span class="title">Шаблон выезда</span>
+        <span class="desc">Заполнить поля выезда</span>
       </button>
     </section>
 
-    <section class="editor-grid">
-      <article class="form-card">
+    <section class="layout-grid">
+      <article class="form-card mode-card active" data-mode-card="court">
         <div class="section-head">
-          <div>
-            <div class="eyebrow">Форма</div>
-            <h2>Данные события</h2>
-          </div>
-          <div class="type-switch" role="tablist" aria-label="Тип события">
-            <button class="switch-btn is-active" type="button" data-type="court">Суд</button>
-            <button class="switch-btn" type="button" data-type="outing">Выезд</button>
-          </div>
+          <h2>Суд</h2>
+          <button class="chip active" type="button" data-mode="court">Активно</button>
         </div>
-
-        <div class="form-grid common-fields">
-          <label class="field">
-            <span>Дата</span>
-            <input id="date" type="date" />
-          </label>
-          <label class="field">
-            <span>Время</span>
-            <input id="time" type="time" />
-          </label>
-          <label class="field field-wide">
-            <span>Алиас чата</span>
-            <input id="chat_alias" type="text" placeholder="Например: офис" />
-          </label>
-        </div>
-
-        <div id="courtFields" class="type-panel form-grid">
-          <label class="field field-wide">
-            <span>Событие</span>
-            <input id="court_title" type="text" placeholder="Суд по делу о залитии" />
-          </label>
-          <label class="field">
-            <span>Номер дела</span>
-            <input id="case_number" type="text" placeholder="A21-025/2026" />
-          </label>
-          <label class="field">
-            <span>Номер экспертизы</span>
-            <input id="court_expertise_number" type="text" placeholder="0734К-2026" />
-          </label>
-          <label class="field field-wide">
-            <span>Суд</span>
-            <input id="court_name" type="text" placeholder="Московский районный суд" />
-          </label>
-          <label class="field field-wide">
-            <span>Адрес</span>
-            <input id="court_address" type="text" placeholder="г. Калининград, ул. Примерная, д. 1" />
-          </label>
-          <label class="field field-wide">
-            <span>Участник</span>
-            <input id="assigned_person" type="text" placeholder="Иванов" />
-          </label>
-        </div>
-
-        <div id="outingFields" class="type-panel form-grid is-hidden">
-          <label class="field field-wide">
-            <span>Событие</span>
-            <input id="outing_title" type="text" placeholder="Залитие потолка" />
-          </label>
-          <label class="field">
-            <span>Номер экспертизы</span>
-            <input id="outing_expertise_number" type="text" placeholder="0734К-2026" />
-          </label>
-          <label class="field field-wide">
-            <span>Адрес</span>
-            <input id="outing_address" type="text" placeholder="г. Калининград, ул. Красная, д. 7, кв. 10" />
-          </label>
-          <label class="field">
-            <span>Эксперт</span>
-            <input id="expert_name" type="text" placeholder="Иванов" />
-          </label>
-          <label class="field">
-            <span>Кто едет</span>
-            <input id="who_goes" type="text" placeholder="Петров" />
-          </label>
-          <label class="field">
-            <span>Кто вёз</span>
-            <input id="who_drove" type="text" placeholder="Lada" />
-          </label>
-          <label class="field">
-            <span>Стоимость экспертизы</span>
-            <input id="expertise_price" type="number" min="0" step="0.01" placeholder="15000" />
-          </label>
-          <label class="field">
-            <span>Стоимость выезда</span>
-            <input id="trip_price" type="number" min="0" step="0.01" placeholder="3000" />
-          </label>
+        <div class="field-grid">
+          <label>Дата<input id="court-date" type="date" /></label>
+          <label>Время<input id="court-time" type="time" /></label>
+          <label>Номер дела<input id="court-case" type="text" placeholder="A21-025/2026" /></label>
+          <label>Суд<input id="court-name" type="text" placeholder="Московский районный суд" /></label>
+          <label class="full">Адрес<input id="court-address" type="text" placeholder="г. Калининград, ул. Примерная, д. 1" /></label>
+          <label class="full">Описание<input id="court-title" type="text" placeholder="суд по делу №A21-025/2026" /></label>
         </div>
       </article>
 
-      <article class="preview-card">
+      <article class="form-card mode-card" data-mode-card="outing">
         <div class="section-head">
-          <div>
-            <div class="eyebrow">Черновик</div>
-            <h2>Предпросмотр сообщения</h2>
-          </div>
+          <h2>Выезд</h2>
+          <button class="chip" type="button" data-mode="outing">Сделать активным</button>
         </div>
-        <pre id="preview" class="preview-box">Заполните форму или выберите шаблон.</pre>
-        <div id="htmlActions" class="actions">
+        <div class="field-grid">
+          <label>Номер экспертизы<input id="outing-number" type="text" placeholder="0734К-2026" /></label>
+          <label>Дата<input id="outing-date" type="date" /></label>
+          <label>Время<input id="outing-time" type="time" /></label>
+          <label>Эксперт<input id="outing-expert" type="text" placeholder="Иванов" /></label>
+          <label>Кто едет<input id="outing-goes" type="text" placeholder="Петров" /></label>
+          <label>Кто вёз<input id="outing-drove" type="text" placeholder="Lada" /></label>
+          <label>Стоимость экспертизы<input id="outing-price" type="number" inputmode="decimal" placeholder="15000" /></label>
+          <label>Стоимость выезда<input id="outing-trip-price" type="number" inputmode="decimal" placeholder="3000" /></label>
+          <label class="full">Адрес<input id="outing-address" type="text" placeholder="г. Калининград, ул. Красная, д. 7, кв. 10" /></label>
+          <label class="full">Описание<input id="outing-title" type="text" placeholder="залитие потолка" /></label>
+        </div>
+      </article>
+    </section>
+
+    <section class="preview-card">
+      <div class="section-head compact">
+        <div>
+          <h2>Предпросмотр отправки</h2>
+          <p>Бот получит это сообщение и поставит напоминания автоматически.</p>
+        </div>
+        <div class="action-row">
           <button id="copyBtn" class="secondary" type="button">Скопировать</button>
           <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
         </div>
-        <div id="status" class="status" aria-live="polite"></div>
-        <p class="hint">Важно: чтобы форма дошла до бота, Mini App должен открываться кнопкой reply-клавиатуры <b>🧩 Mini App</b>.</p>
-      </article>
+      </div>
+      <div id="previewCard" class="preview-body empty">
+        <div class="preview-line muted">Сначала выберите шаблон или заполните поля.</div>
+      </div>
+      <textarea id="payload" class="payload-hidden" aria-hidden="true"></textarea>
+      <div id="status" class="status" aria-live="polite"></div>
+      <p class="hint">Важно: чтобы данные дошли в бот как <code>web_app_data</code>, Mini App должен открываться кнопкой <b>🧩 Mini App</b> на нижней клавиатуре.</p>
     </section>
   </div>
   <script src="app.js"></script>
