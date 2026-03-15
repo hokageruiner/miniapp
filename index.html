@@ -13,28 +13,28 @@
       <div>
         <div class="eyebrow">BNEO</div>
         <h1>Рабочий кабинет</h1>
-        <p>Создание судов и выездов теперь живёт здесь. Бот сохранит событие и сам напомнит о нём в чате.</p>
+        <p>Быстрый запуск судов и выездов прямо внутри Telegram.</p>
       </div>
       <div class="pill">Mini App</div>
     </header>
 
     <section class="grid">
-      <button class="feature-card" data-action="court-template">
+      <button class="feature-card" type="button" data-action="court-template">
         <span class="icon">⚖️</span>
         <span class="title">Шаблон суда</span>
         <span class="desc">Подставить готовую форму для суда</span>
       </button>
-      <button class="feature-card" data-action="outing-template">
+      <button class="feature-card" type="button" data-action="outing-template">
         <span class="icon">🚗</span>
         <span class="title">Шаблон выезда</span>
         <span class="desc">Быстро вставить форму выезда</span>
       </button>
-      <button class="feature-card" data-action="today">
+      <button class="feature-card" type="button" data-action="today">
         <span class="icon">📆</span>
         <span class="title">На сегодня</span>
         <span class="desc">Показать список задач на сегодня</span>
       </button>
-      <button class="feature-card" data-action="week">
+      <button class="feature-card" type="button" data-action="week">
         <span class="icon">🗓️</span>
         <span class="title">На неделю</span>
         <span class="desc">Открыть недельную сводку</span>
@@ -44,12 +44,12 @@
     <section class="form-card">
       <label for="payload">Черновик сообщения</label>
       <textarea id="payload" rows="7" placeholder="Сюда можно собрать текст, который Mini App отправит боту"></textarea>
-      <div id="html-actions" class="actions">
+      <div id="htmlActions" class="actions">
         <button id="copyBtn" class="secondary" type="button">Скопировать</button>
         <button id="sendBtn" class="primary" type="button">Отправить в бота</button>
       </div>
-      <div id="status" class="status"></div>
-      <p class="hint">Внутри Telegram используйте встроенные нижние кнопки. Окно после отправки не закрывается.</p>
+      <div id="status" class="status" aria-live="polite"></div>
+      <p class="hint">В Telegram используются нижние встроенные кнопки. В обычном браузере работают шаблоны и копирование.</p>
     </section>
   </div>
   <script src="app.js"></script>
