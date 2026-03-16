@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
       tg.SecondaryButton.onClick(copyDraft);
     }
     if (htmlActionsEl) htmlActionsEl.style.display = 'none';
-    setStatus('Mini App подключён. Заполните форму и нажмите «Применить».', 'success');
+    setStatus('Приложение BNEO подключено. Заполните форму и нажмите «Применить».', 'success');
   } else {
     setStatus('Открыт режим браузера. Сборка черновика и копирование доступны.', 'info');
   }
