@@ -154,18 +154,20 @@ document.addEventListener('DOMContentLoaded', () => {
     ensureDefaults();
     const dateText = formatDateForText(outingFields.date.value);
     const timeText = outingFields.time.value || '00:00';
-    const parts = [];
-    parts.push(outingFields.expertise.value.trim() || '0734К-2026');
-    parts.push(timeText);
-    parts.push(dateText);
-    if (outingFields.address.value.trim()) parts.push(outingFields.address.value.trim());
-    if (outingFields.title.value.trim()) parts.push(outingFields.title.value.trim());
+    const parts = [
+      'тип: выезд',
+      `номер экспертизы: ${outingFields.expertise.value.trim() || '0734К-2026'}`,
+      `дата: ${dateText}`,
+      `время: ${timeText}`,
+    ];
+    if (outingFields.address.value.trim()) parts.push(`адрес: ${outingFields.address.value.trim()}`);
+    if (outingFields.title.value.trim()) parts.push(`событие: ${outingFields.title.value.trim()}`);
     if (outingFields.expert.value.trim()) parts.push(`эксперт: ${outingFields.expert.value.trim()}`);
     if (outingFields.whoGoes.value.trim()) parts.push(`кто едет: ${outingFields.whoGoes.value.trim()}`);
     if (outingFields.whoDrove.value.trim()) parts.push(`кто вёз: ${outingFields.whoDrove.value.trim()}`);
     if (outingFields.expertisePrice.value.trim()) parts.push(`стоимость экспертизы: ${outingFields.expertisePrice.value.trim()}`);
     if (outingFields.tripPrice.value.trim()) parts.push(`стоимость выезда: ${outingFields.tripPrice.value.trim()}`);
-    setDraft(parts.join(' '));
+    setDraft(parts.join('\n'));
     setStatus('Черновик выезда обновлён.', 'success');
   }
 
