@@ -52,13 +52,19 @@ body {
   gap: 14px;
   align-items: center;
 }
+.brand-logo-wrap {
+  width: 74px;
+  height: 74px;
+  border-radius: 18px;
+  overflow: hidden;
+  flex: 0 0 74px;
+}
 .brand-logo {
   width: 74px;
   height: 74px;
-  object-fit: contain;
   border-radius: 18px;
-  background: rgba(255,255,255,0.04);
-  padding: 8px;
+  object-fit: cover;
+  display: block;
 }
 .eyebrow {
   color: var(--hint);
