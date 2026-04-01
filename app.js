@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
   const tg = window.Telegram?.WebApp || null;
-  const isTelegram = Boolean(tg);
+  const hasTelegramObject = Boolean(window.Telegram);
+  const hasInitData = Boolean(tg?.initData);
+  const isTelegram = Boolean(tg && (tg.platform || hasInitData || tg.initDataUnsafe?.user));
 
   const payloadEl = document.getElementById('payload');
   const statusEl = document.getElementById('status');
@@ -10,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
   const panels = Array.from(document.querySelectorAll('.tab-panel'));
   const actionButtons = Array.from(document.querySelectorAll('[data-action]'));
+  const envBadgeEl = document.getElementById('envBadge');
 
   const courtFields = {
     date: document.getElementById('courtDate'),
@@ -47,6 +50,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function setDraft(text) {
     payloadEl.value = text || '';
     updateButtons();
+  }
+
+  function updateEnvBadge() {
+    if (!envBadgeEl) return;
+    if (isTelegram) {
+      const platform = tg?.platform ? ` · ${tg.platform}` : '';
+      envBadgeEl.textContent = `В Telegram${platform}`;
+      envBadgeEl.classList.add('is-ok');
+      return;
+    }
+    envBadgeEl.textContent = 'Режим браузера';
+    envBadgeEl.classList.remove('is-ok');
   }
 
   function updateButtons() {
@@ -92,6 +107,82 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  function buildCourtText() {
+    const parts = [];
+    const dateText = formatDateForText(courtFields.date.value);
+    const timeText = courtFields.time.value || '00:00';
+    parts.push(`${dateText} ${timeText}`);
+    parts.push(courtFields.title.value.trim() || 'суд по делу');
+    if (courtFields.caseNumber.value.trim()) parts.push(`№${courtFields.caseNumber.value.trim()}`);
+    if (courtFields.expertise.value.trim()) parts.push(`экспертиза ${courtFields.expertise.value.trim()}`);
+    if (courtFields.courtName.value.trim()) parts.push(`суд: ${courtFields.courtName.value.trim()}`);
+    if (courtFields.address.value.trim()) parts.push(`адрес: ${courtFields.address.value.trim()}`);
+    if (courtFields.person.value.trim()) parts.push(`явка ${courtFields.person.value.trim()}`);
+    return parts.join('\n');
+  }
+
+  function buildOutingText() {
+    const dateText = formatDateForText(outingFields.date.value);
+    const timeText = outingFields.time.value || '00:00';
+    const parts = [
+      'тип: выезд',
+      `номер экспертизы: ${outingFields.expertise.value.trim() || '0734К-2026'}`,
+      `дата: ${dateText}`,
+      `время: ${timeText}`,
+    ];
+    if (outingFields.address.value.trim()) parts.push(`адрес: ${outingFields.address.value.trim()}`);
+    if (outingFields.title.value.trim()) parts.push(`событие: ${outingFields.title.value.trim()}`);
+    if (outingFields.expert.value.trim()) parts.push(`эксперт: ${outingFields.expert.value.trim()}`);
+    if (outingFields.whoGoes.value.trim()) parts.push(`кто едет: ${outingFields.whoGoes.value.trim()}`);
+    if (outingFields.whoDrove.value.trim()) parts.push(`кто вёз: ${outingFields.whoDrove.value.trim()}`);
+    if (outingFields.expertisePrice.value.trim()) parts.push(`стоимость экспертизы: ${outingFields.expertisePrice.value.trim()}`);
+    if (outingFields.tripPrice.value.trim()) parts.push(`стоимость выезда: ${outingFields.tripPrice.value.trim()}`);
+    return parts.join('\n');
+  }
+
+  function buildPayload(raw = null) {
+    const currentTab = document.querySelector('.tab-btn.is-active')?.dataset.tab || 'court';
+    const type = currentTab === 'outing' ? 'outing' : 'court';
+    const text = (raw || getDraft()).trim();
+    const fields = type === 'court'
+      ? {
+          date: formatDateForText(courtFields.date.value),
+          time: courtFields.time.value || '00:00',
+          caseNumber: courtFields.caseNumber.value.trim(),
+          expertise: courtFields.expertise.value.trim(),
+          courtName: courtFields.courtName.value.trim(),
+          address: courtFields.address.value.trim(),
+          person: courtFields.person.value.trim(),
+          title: courtFields.title.value.trim() || 'суд по делу',
+        }
+      : {
+          date: formatDateForText(outingFields.date.value),
+          time: outingFields.time.value || '00:00',
+          expertise: outingFields.expertise.value.trim() || '0734К-2026',
+          expert: outingFields.expert.value.trim(),
+          address: outingFields.address.value.trim(),
+          title: outingFields.title.value.trim(),
+          whoGoes: outingFields.whoGoes.value.trim(),
+          whoDrove: outingFields.whoDrove.value.trim(),
+          expertisePrice: outingFields.expertisePrice.value.trim(),
+          tripPrice: outingFields.tripPrice.value.trim(),
+        };
+
+    return JSON.stringify({
+      source: 'bneo_miniapp',
+      version: '0.4.0',
+      type,
+      text,
+      fields,
+      meta: {
+        platform: tg?.platform || null,
+        hasTelegramObject,
+        hasInitData,
+        sentAt: new Date().toISOString(),
+      },
+    });
+  }
+
   function fillCourtTemplate() {
     ensureDefaults();
     courtFields.caseNumber.value = 'A21-025/2026';
@@ -122,52 +213,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyCourt() {
     ensureDefaults();
-    const parts = [];
-    const dateText = formatDateForText(courtFields.date.value);
-    const timeText = courtFields.time.value || '00:00';
-    parts.push(`${dateText} ${timeText}`);
-    if (courtFields.title.value.trim()) {
-      parts.push(courtFields.title.value.trim());
-    } else {
-      parts.push('суд по делу');
-    }
-    if (courtFields.caseNumber.value.trim()) {
-      parts.push(`№${courtFields.caseNumber.value.trim()}`);
-    }
-    if (courtFields.expertise.value.trim()) {
-      parts.push(`экспертиза ${courtFields.expertise.value.trim()}`);
-    }
-    if (courtFields.courtName.value.trim()) {
-      parts.push(`суд: ${courtFields.courtName.value.trim()}`);
-    }
-    if (courtFields.address.value.trim()) {
-      parts.push(`адрес: ${courtFields.address.value.trim()}`);
-    }
-    if (courtFields.person.value.trim()) {
-      parts.push(`явка ${courtFields.person.value.trim()}`);
-    }
-    setDraft(parts.join('\n'));
+    switchTab('court');
+    setDraft(buildCourtText());
     setStatus('Черновик суда обновлён.', 'success');
   }
 
   function applyOuting() {
     ensureDefaults();
-    const dateText = formatDateForText(outingFields.date.value);
-    const timeText = outingFields.time.value || '00:00';
-    const parts = [
-      'тип: выезд',
-      `номер экспертизы: ${outingFields.expertise.value.trim() || '0734К-2026'}`,
-      `дата: ${dateText}`,
-      `время: ${timeText}`,
-    ];
-    if (outingFields.address.value.trim()) parts.push(`адрес: ${outingFields.address.value.trim()}`);
-    if (outingFields.title.value.trim()) parts.push(`событие: ${outingFields.title.value.trim()}`);
-    if (outingFields.expert.value.trim()) parts.push(`эксперт: ${outingFields.expert.value.trim()}`);
-    if (outingFields.whoGoes.value.trim()) parts.push(`кто едет: ${outingFields.whoGoes.value.trim()}`);
-    if (outingFields.whoDrove.value.trim()) parts.push(`кто вёз: ${outingFields.whoDrove.value.trim()}`);
-    if (outingFields.expertisePrice.value.trim()) parts.push(`стоимость экспертизы: ${outingFields.expertisePrice.value.trim()}`);
-    if (outingFields.tripPrice.value.trim()) parts.push(`стоимость выезда: ${outingFields.tripPrice.value.trim()}`);
-    setDraft(parts.join('\n'));
+    switchTab('outing');
+    setDraft(buildOutingText());
     setStatus('Черновик выезда обновлён.', 'success');
   }
 
@@ -186,17 +240,17 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function sendToBot(raw = null) {
-    const payload = (raw || getDraft()).trim();
-    if (!payload) {
+    const draft = (raw || getDraft()).trim();
+    if (!draft) {
       setStatus('Сначала соберите черновик.', 'error');
       return;
     }
     if (!isTelegram) {
-      setStatus('Отправка работает внутри Telegram Mini App.', 'error');
+      setStatus('Открыт режим браузера. Отправка работает только внутри Telegram Mini App.', 'error');
       return;
     }
     try {
-      tg.sendData(payload);
+      tg.sendData(buildPayload(raw));
       setStatus('Форма отправлена в бота.', 'success');
     } catch (error) {
       console.error(error);
@@ -210,7 +264,13 @@ document.addEventListener('DOMContentLoaded', () => {
       setStatus(`Команда ${command} подготовлена.`, 'success');
       return;
     }
-    sendToBot(command);
+    try {
+      tg.sendData(command);
+      setStatus(`Команда ${command} отправлена в бота.`, 'success');
+    } catch (error) {
+      console.error(error);
+      setStatus(`Не удалось отправить команду ${command}.`, 'error');
+    }
   }
 
   tabButtons.forEach((btn) => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
@@ -248,6 +308,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   ensureDefaults();
   switchTab('court');
+  updateEnvBadge();
   updateButtons();
 
   if (isTelegram) {
@@ -265,6 +326,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (htmlActionsEl) htmlActionsEl.style.display = 'none';
     setStatus('Приложение BNEO подключено. Заполните форму и нажмите «Применить».', 'success');
   } else {
-    setStatus('Открыт режим браузера. Сборка черновика и копирование доступны.', 'info');
+    const details = [];
+    if (!hasTelegramObject) details.push('объект Telegram WebApp не найден');
+    if (hasTelegramObject && !hasInitData) details.push('initData отсутствует');
+    const suffix = details.length ? ` (${details.join(', ')})` : '';
+    setStatus(`Открыт режим браузера${suffix}. Сборка черновика и копирование доступны.`, 'info');
   }
 });
