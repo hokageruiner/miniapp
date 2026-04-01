@@ -1,9 +1,0 @@
-.env
-bot_data.sqlite3
-__pycache__/
-*.pyc
-backup/
-patches/*.zip
-exports/
-patch_state.json
-README_DEPLOY
