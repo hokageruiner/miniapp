@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (!isTelegram) {
-      setStatus('Отправка работает внутри Telegram Mini App.', 'error');
+      setStatus('ОШИБКА 9786', 'error');
       return;
     }
     try {
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
       setStatus('Форма отправлена в бота.', 'success');
     } catch (error) {
       console.error(error);
-      setStatus('Не удалось отправить данные в бота.', 'error');
+      setStatus('ОШИБКА 9799', 'error');
     }
   }
 
@@ -266,8 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
       tg.SecondaryButton.onClick(copyDraft);
     }
     if (htmlActionsEl) htmlActionsEl.style.display = 'flex';
-    setStatus('Приложение BNEO подключено. Заполните форму и нажмите «Применить», затем «Отправить в бота».', 'success');
+    setStatus('Успешная загрузка Рабочего приложения BNEO GROUP!', 'success');
   } else {
-    setStatus('Открыт режим браузера. Сборка черновика и копирование доступны.', 'info');
+    setStatus('ОШИБКА 9999', 'info');
   }
 });
