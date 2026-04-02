@@ -139,16 +139,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function applyCourt() {
     ensureDefaults();
-    const parts = [];
     const dateText = formatDateForText(courtFields.date.value);
     const timeText = courtFields.time.value || '00:00';
-    parts.push(`${dateText} ${timeText}`);
-    parts.push(courtFields.title.value.trim() || 'суд по делу');
-    if (courtFields.caseNumber.value.trim()) parts.push(`№${courtFields.caseNumber.value.trim()}`);
-    if (courtFields.expertise.value.trim()) parts.push(`экспертиза ${courtFields.expertise.value.trim()}`);
+    const title = courtFields.title.value.trim() || 'Вызов в суд';
+    const parts = [
+      'тип: суд',
+      `событие: ${title}`,
+      `дата: ${dateText}`,
+      `время: ${timeText}`,
+    ];
+    if (courtFields.caseNumber.value.trim()) parts.push(`номер дела: ${courtFields.caseNumber.value.trim()}`);
+    if (courtFields.expertise.value.trim()) parts.push(`номер экспертизы: ${courtFields.expertise.value.trim()}`);
+    if (courtFields.person.value.trim()) parts.push(`участник: ${courtFields.person.value.trim()}`);
     if (courtFields.courtName.value.trim()) parts.push(`суд: ${courtFields.courtName.value.trim()}`);
     if (courtFields.address.value.trim()) parts.push(`адрес: ${courtFields.address.value.trim()}`);
-    if (courtFields.person.value.trim()) parts.push(`явка ${courtFields.person.value.trim()}`);
     setDraft(parts.join('\n'));
     setStatus('Черновик суда обновлён.', 'success');
   }
