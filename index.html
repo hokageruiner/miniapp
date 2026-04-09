@@ -84,6 +84,7 @@
 
         <div class="form-actions">
           <button type="button" class="ghost-btn" data-action="court-template">Шаблон</button>
+          <button type="button" class="ghost-btn" data-action="save-court-template">Сохранить как шаблон</button>
           <button type="button" class="primary-btn" data-action="apply-court">Применить</button>
         </div>
       </div>
@@ -104,6 +105,7 @@
 
         <div class="form-actions">
           <button type="button" class="ghost-btn" data-action="outing-template">Шаблон</button>
+          <button type="button" class="ghost-btn" data-action="save-outing-template">Сохранить как шаблон</button>
           <button type="button" class="primary-btn" data-action="apply-outing">Применить</button>
         </div>
       </div>
@@ -126,7 +128,16 @@
 
       <div id="htmlActions" class="actions">
         <button id="copyBtn" class="ghost-btn" type="button">Скопировать</button>
+        <button id="clearBtn" class="ghost-btn" type="button">Очистить</button>
+        <button id="restoreBtn" class="ghost-btn" type="button">Вернуть черновик</button>
         <button id="sendBtn" class="primary-btn" type="button">Отправить в бота</button>
+      </div>
+
+      <div class="template-row">
+        <button class="quick-chip" type="button" data-action="load-last-court">Последний суд</button>
+        <button class="quick-chip" type="button" data-action="load-last-outing">Последний выезд</button>
+        <button class="quick-chip" type="button" data-action="load-saved-court">Сохранённый шаблон суда</button>
+        <button class="quick-chip" type="button" data-action="load-saved-outing">Сохранённый шаблон выезда</button>
       </div>
 
       <div id="status" class="status" aria-live="polite"></div>

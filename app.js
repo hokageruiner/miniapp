@@ -3,11 +3,21 @@ document.addEventListener('DOMContentLoaded', () => {
   let isTelegram = false;
   let telegramBound = false;
 
+  const STORAGE_KEYS = {
+    draft: 'bneo.draft',
+    courtLast: 'bneo.court.last',
+    outingLast: 'bneo.outing.last',
+    courtSaved: 'bneo.court.saved',
+    outingSaved: 'bneo.outing.saved',
+  };
+
   const payloadEl = document.getElementById('payload');
   const statusEl = document.getElementById('status');
   const htmlActionsEl = document.getElementById('htmlActions');
   const copyBtn = document.getElementById('copyBtn');
   const sendBtn = document.getElementById('sendBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const restoreBtn = document.getElementById('restoreBtn');
   const tabButtons = Array.from(document.querySelectorAll('.tab-btn'));
   const panels = Array.from(document.querySelectorAll('.tab-panel'));
   const actionButtons = Array.from(document.querySelectorAll('[data-action]'));
@@ -40,11 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!document.body.classList.contains('is-ready')) {
       document.body.classList.remove('is-loading');
       document.body.classList.add('is-ready');
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          document.body.classList.add('is-enhanced');
-        });
-      });
+      requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('is-enhanced')));
     }
   }
 
@@ -54,6 +60,21 @@ document.addEventListener('DOMContentLoaded', () => {
     statusEl.className = `status is-${type}`;
   }
 
+  function storageGet(key, fallback = null) {
+    try {
+      const raw = window.localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch {
+      return fallback;
+    }
+  }
+
+  function storageSet(key, value) {
+    try {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    } catch {}
+  }
+
   function getDraft() {
     return (payloadEl?.value || '').trim();
   }
@@ -61,6 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function setDraft(text) {
     if (!payloadEl) return;
     payloadEl.value = text || '';
+    storageSet(STORAGE_KEYS.draft, payloadEl.value);
     updateButtons();
   }
 
@@ -68,6 +90,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const hasDraft = Boolean(getDraft());
     if (copyBtn) copyBtn.disabled = !hasDraft;
     if (sendBtn) sendBtn.disabled = !hasDraft;
+    if (clearBtn) clearBtn.disabled = !hasDraft;
+    if (restoreBtn) restoreBtn.disabled = !storageGet(STORAGE_KEYS.draft, '');
 
     if (isTelegram && tg?.MainButton) {
       tg.MainButton.setText('Отправить в бота');
@@ -84,29 +108,42 @@ document.addEventListener('DOMContentLoaded', () => {
     panels.forEach((panel) => panel.classList.toggle('is-active', panel.dataset.panel === tabName));
   }
 
-  function pad(value) {
-    return String(value).padStart(2, '0');
-  }
+  function pad(value) { return String(value).padStart(2, '0'); }
 
   function formatDateForText(value) {
     if (!value) return '';
     const [year, month, day] = value.split('-');
-    if (!year || !month || !day) return value;
-    return `${day}.${month}.${year}`;
+    return (!year || !month || !day) ? value : `${day}.${month}.${year}`;
   }
 
   function ensureDefaults() {
     const now = new Date();
     const dateValue = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const timeValue = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    [courtFields.date, outingFields.date].forEach((el) => { if (el && !el.value) el.value = dateValue; });
+    [courtFields.time, outingFields.time].forEach((el) => { if (el && !el.value) el.value = timeValue; });
+  }
 
-    [courtFields.date, outingFields.date].forEach((el) => {
-      if (el && !el.value) el.value = dateValue;
-    });
+  function readFields(fields) {
+    const data = {};
+    Object.entries(fields).forEach(([key, el]) => data[key] = el?.value || '');
+    return data;
+  }
 
-    [courtFields.time, outingFields.time].forEach((el) => {
-      if (el && !el.value) el.value = timeValue;
-    });
+  function fillFields(fields, values = {}) {
+    Object.entries(fields).forEach(([key, el]) => { if (el) el.value = values[key] || ''; });
+  }
+
+  function saveCurrentState(key, fields) { storageSet(key, readFields(fields)); }
+
+  function loadState(key, fields, successText) {
+    const data = storageGet(key);
+    if (!data) {
+      setStatus('Данные не найдены.', 'error');
+      return;
+    }
+    fillFields(fields, data);
+    setStatus(successText, 'success');
   }
 
   function fillCourtTemplate() {
@@ -116,7 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     courtFields.courtName.value = 'Московский районный суд';
     courtFields.address.value = 'г. Калининград, ул. Примерная, д. 1';
     courtFields.person.value = 'Иванов Иван';
-    courtFields.title.value = 'суд по делу';
+    courtFields.title.value = 'Вызов в суд';
     switchTab('court');
     applyCourt();
     setStatus('Шаблон суда подставлен.', 'success');
@@ -142,18 +179,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateText = formatDateForText(courtFields.date.value);
     const timeText = courtFields.time.value || '00:00';
     const title = courtFields.title.value.trim() || 'Вызов в суд';
-    const parts = [
-      'тип: суд',
-      `событие: ${title}`,
-      `дата: ${dateText}`,
-      `время: ${timeText}`,
-    ];
+    const parts = ['тип: суд', `событие: ${title}`, `дата: ${dateText}`, `время: ${timeText}`];
     if (courtFields.caseNumber.value.trim()) parts.push(`номер дела: ${courtFields.caseNumber.value.trim()}`);
     if (courtFields.expertise.value.trim()) parts.push(`номер экспертизы: ${courtFields.expertise.value.trim()}`);
     if (courtFields.person.value.trim()) parts.push(`участник: ${courtFields.person.value.trim()}`);
     if (courtFields.courtName.value.trim()) parts.push(`суд: ${courtFields.courtName.value.trim()}`);
     if (courtFields.address.value.trim()) parts.push(`адрес: ${courtFields.address.value.trim()}`);
     setDraft(parts.join('\n'));
+    saveCurrentState(STORAGE_KEYS.courtLast, courtFields);
     setStatus('Черновик суда обновлён.', 'success');
   }
 
@@ -161,12 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ensureDefaults();
     const dateText = formatDateForText(outingFields.date.value);
     const timeText = outingFields.time.value || '00:00';
-    const parts = [
-      'тип: выезд',
-      `номер экспертизы: ${outingFields.expertise.value.trim() || '0734К-2026'}`,
-      `дата: ${dateText}`,
-      `время: ${timeText}`,
-    ];
+    const parts = ['тип: выезд', `номер экспертизы: ${outingFields.expertise.value.trim() || '0734К-2026'}`, `дата: ${dateText}`, `время: ${timeText}`];
     if (outingFields.address.value.trim()) parts.push(`адрес: ${outingFields.address.value.trim()}`);
     if (outingFields.title.value.trim()) parts.push(`событие: ${outingFields.title.value.trim()}`);
     if (outingFields.expert.value.trim()) parts.push(`эксперт: ${outingFields.expert.value.trim()}`);
@@ -175,33 +203,40 @@ document.addEventListener('DOMContentLoaded', () => {
     if (outingFields.expertisePrice.value.trim()) parts.push(`стоимость экспертизы: ${outingFields.expertisePrice.value.trim()}`);
     if (outingFields.tripPrice.value.trim()) parts.push(`стоимость выезда: ${outingFields.tripPrice.value.trim()}`);
     setDraft(parts.join('\n'));
+    saveCurrentState(STORAGE_KEYS.outingLast, outingFields);
     setStatus('Черновик выезда обновлён.', 'success');
   }
 
   async function copyDraft() {
     const draft = getDraft();
-    if (!draft) {
-      setStatus('Сначала соберите черновик.', 'error');
-      return;
-    }
+    if (!draft) return setStatus('Сначала соберите черновик.', 'error');
     try {
       await navigator.clipboard.writeText(draft);
       setStatus('Черновик скопирован.', 'success');
-    } catch (error) {
+    } catch {
       setStatus('Не удалось скопировать текст.', 'error');
     }
   }
 
+  function clearDraftAndForm() {
+    setDraft('');
+    fillFields(courtFields, {});
+    fillFields(outingFields, {});
+    ensureDefaults();
+    setStatus('Форма очищена.', 'success');
+  }
+
+  function restoreDraft() {
+    const saved = storageGet(STORAGE_KEYS.draft, '');
+    if (!saved) return setStatus('Сохранённого черновика нет.', 'error');
+    setDraft(saved);
+    setStatus('Черновик восстановлен.', 'success');
+  }
+
   function sendToBot(raw = null) {
     const payload = (raw || getDraft()).trim();
-    if (!payload) {
-      setStatus('Сначала соберите черновик.', 'error');
-      return;
-    }
-    if (!isTelegram || !tg) {
-      setStatus('Отправка работает внутри Telegram Mini App.', 'error');
-      return;
-    }
+    if (!payload) return setStatus('Сначала соберите черновик.', 'error');
+    if (!isTelegram || !tg) return setStatus('Отправка работает внутри Telegram Mini App.', 'error');
     try {
       tg.sendData(payload);
       setStatus('Форма отправлена в бота.', 'success');
@@ -214,10 +249,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function sendQuickCommand(command) {
     if (!isTelegram || !tg) {
       setDraft(command);
-      setStatus(`Команда ${command} подготовлена.`, 'success');
-      return;
+      return setStatus(`Команда ${command} подготовлена.`, 'success');
     }
     sendToBot(command);
+  }
+
+  function attachAutoSave() {
+    [...Object.values(courtFields), ...Object.values(outingFields)].forEach((el) => {
+      el?.addEventListener('input', () => {
+        saveCurrentState(STORAGE_KEYS.courtLast, courtFields);
+        saveCurrentState(STORAGE_KEYS.outingLast, outingFields);
+      });
+    });
   }
 
   function attachBaseHandlers() {
@@ -226,38 +269,32 @@ document.addEventListener('DOMContentLoaded', () => {
     actionButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         switch (btn.dataset.action) {
-          case 'today':
-            sendQuickCommand('/today');
-            break;
-          case 'week':
-            sendQuickCommand('/week');
-            break;
-          case 'court-template':
-            fillCourtTemplate();
-            break;
-          case 'outing-template':
-            fillOutingTemplate();
-            break;
-          case 'apply-court':
-            applyCourt();
-            break;
-          case 'apply-outing':
-            applyOuting();
-            break;
-          default:
-            break;
+          case 'today': return sendQuickCommand('/today');
+          case 'week': return sendQuickCommand('/week');
+          case 'court-template': return fillCourtTemplate();
+          case 'outing-template': return fillOutingTemplate();
+          case 'apply-court': return applyCourt();
+          case 'apply-outing': return applyOuting();
+          case 'save-court-template': storageSet(STORAGE_KEYS.courtSaved, readFields(courtFields)); return setStatus('Шаблон суда сохранён.', 'success');
+          case 'save-outing-template': storageSet(STORAGE_KEYS.outingSaved, readFields(outingFields)); return setStatus('Шаблон выезда сохранён.', 'success');
+          case 'load-last-court': switchTab('court'); return loadState(STORAGE_KEYS.courtLast, courtFields, 'Последний суд загружен.');
+          case 'load-last-outing': switchTab('outing'); return loadState(STORAGE_KEYS.outingLast, outingFields, 'Последний выезд загружен.');
+          case 'load-saved-court': switchTab('court'); return loadState(STORAGE_KEYS.courtSaved, courtFields, 'Сохранённый шаблон суда загружен.');
+          case 'load-saved-outing': switchTab('outing'); return loadState(STORAGE_KEYS.outingSaved, outingFields, 'Сохранённый шаблон выезда загружен.');
+          default: return;
         }
       });
     });
 
     copyBtn?.addEventListener('click', copyDraft);
     sendBtn?.addEventListener('click', () => sendToBot());
+    clearBtn?.addEventListener('click', clearDraftAndForm);
+    restoreBtn?.addEventListener('click', restoreDraft);
   }
 
   function bindTelegram() {
     const candidate = window.Telegram?.WebApp || null;
     if (!candidate || telegramBound) return false;
-
     tg = candidate;
     isTelegram = true;
     telegramBound = true;
@@ -266,17 +303,14 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       tg.ready?.();
       tg.expand?.();
-
       if (tg.MainButton) {
         tg.MainButton.offClick(sendToBot);
         tg.MainButton.onClick(() => sendToBot());
       }
-
       if (tg.SecondaryButton) {
         tg.SecondaryButton.offClick(copyDraft);
         tg.SecondaryButton.onClick(copyDraft);
       }
-
       if (htmlActionsEl) htmlActionsEl.style.display = 'flex';
       updateButtons();
       setStatus('Приложение BNEO подключено. Заполните форму и нажмите «Применить», затем «Отправить в бота».', 'success');
@@ -284,30 +318,15 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(error);
       setStatus('Mini App открыт, но Telegram API инициализировался с ошибкой.', 'error');
     }
-
     return true;
   }
 
-  function waitForTelegram(attempt = 0) {
-    if (bindTelegram()) return;
-
-    if (attempt === 0) {
-      setStatus('Интерфейс готов. Подключение к Telegram продолжается…', 'info');
-    }
-
-    if (attempt >= 40) {
-      setStatus('Интерфейс готов. Если это Telegram, подключение заняло слишком много времени.', 'info');
-      return;
-    }
-
-    setTimeout(() => waitForTelegram(attempt + 1), 150);
-  }
-
-  attachBaseHandlers();
   ensureDefaults();
-  switchTab('court');
+  attachBaseHandlers();
+  attachAutoSave();
+  bindTelegram();
+  const savedDraft = storageGet(STORAGE_KEYS.draft, '');
+  if (savedDraft) payloadEl.value = savedDraft;
   updateButtons();
-  setStatus('Интерфейс готов. Можно работать.', 'info');
   markAppReady();
-  waitForTelegram();
 });
